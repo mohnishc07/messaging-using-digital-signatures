@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11232e">
+  <title>SignedChat · Secure messaging lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="api.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="workspace">
+    <aside>
+      <a href="#" class="brand"><span data-icon="shield"></span>signedchat<span>.</span></a>
+      <div class="sidebar-label">WORKSPACE</div>
+      <div class="nav-current"><span data-icon="chat"></span>Conversation<span>01</span></div>
+      <div class="sidebar-note"><span data-icon="shield"></span><p>Every message.<br>A signature to inspect.</p></div>
+      <div class="sidebar-bottom">SECURE MESSAGING PROTOTYPE<br><span>Ed25519 · Spring Boot</span></div>
+    </aside>
+    <main>
+      <header><span>WORKSPACE <b>/</b> CONVERSATION</span><span id="connection-status" class="connection-status" role="status">Connecting…</span></header>
+      <div class="page-heading">
+        <div><div class="eyebrow">SIGNED. SENT. VERIFIED.</div><h1>Two people. One conversation.</h1><p>Exchange messages and inspect the signatures behind them.</p></div>
+        <button id="refresh" class="button button-outline" type="button"><span data-icon="refresh"></span>Refresh inboxes</button>
+      </div>
+      <div id="connection-error" class="connection-error" role="alert" hidden></div>
+      <div class="mobile-tabs" aria-label="Choose conversation"><button type="button" data-tab="Alice" aria-pressed="true">Alice</button><button type="button" data-tab="Bob" aria-pressed="false">Bob</button></div>
+      <div id="chat-grid" class="chat-grid show-alice"></div>
+      <footer><span>✓ Verification results come from the backend.</span><span>Demo identities · Messages are signed, not encrypted.</span></footer>
+      <noscript><p class="connection-error">Enable JavaScript to use the messaging interface.</p></noscript>
+    </main>
+  </div>
+  <template id="panel-template">
+    <section class="chat-panel">
+      <div class="chat-heading"><div class="avatar"><span class="initial"></span><span class="presence"></span></div><div><h2></h2><p class="peer-label"></p></div><span class="identity-label"></span></div>
+      <div class="trust-strip"><span data-icon="key"></span><span class="trust-label"></span><details class="public-key" hidden><summary>Public key</summary><code></code></details></div>
+      <div class="messages" role="log"></div>
+      <div class="composer">
+        <form><label class="sr-only"></label><textarea rows="2" disabled></textarea><button class="button button-primary send-button" type="submit" disabled><span data-icon="send"></span></button></form>
+        <div class="composer-caption"><span>Ed25519 signed</span><span>Enter to send · Shift + Enter for a new line</span></div>
+        <div aria-live="polite"><p class="notice" hidden></p></div>
+      </div>
+    </section>
+  </template>
+</body>
+</html>

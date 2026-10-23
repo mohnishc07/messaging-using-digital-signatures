@@ -5,10 +5,11 @@ The project separates the backend and frontend into their own folders.
 ```text
 messaging-using-digital-signatures/
 ├── backend/       Java / Spring Boot API, source, tests, and Maven wrapper
+├── frontend/      Plain HTML, CSS, JavaScript, and local server launcher
 └── README.md      Project overview
 ```
 
-The frontend will be added in a separate `frontend/` folder alongside `backend/`.
+The frontend and backend live together in this repository. No Node.js, npm, React, or frontend build step is required.
 
 ## Run the backend
 
@@ -30,6 +31,25 @@ cd backend
 
 The API runs at **http://localhost:8080**. Keep this terminal running while using the frontend.
 
+## Run the frontend
+
+Open a second terminal at the repository root:
+
+```powershell
+cd frontend
+.\start.cmd
+```
+
+Open **http://127.0.0.1:5173**. Create Alice and Bob, then exchange messages. Keep both terminals running.
+
+On macOS / Linux, run `cd frontend` and `java tools/DevServer.java`.
+
+The frontend launcher uses the same JDK 21+ prerequisite as the backend. Its local development server forwards `/api` to port 8080. To use another frontend port, run `.\start.cmd 5174` from `frontend/`. Stop either server with Ctrl+C.
+
+## Check the frontend
+
+With the frontend server running, open **http://127.0.0.1:5173/tests.html** for the eight dependency-free browser tests.
+
 ## Test the backend
 
 From the `backend/` directory:
@@ -41,3 +61,5 @@ From the `backend/` directory:
 On macOS / Linux use `./mvnw test`.
 
 See [backend/README.md](backend/README.md) for the API endpoints, examples, signing design, and current limitations.
+
+See [frontend/README.md](frontend/README.md) for frontend configuration, operation, and optional hosting directly from Spring Boot.
