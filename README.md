@@ -63,3 +63,11 @@ On macOS / Linux use `./mvnw test`.
 See [backend/README.md](backend/README.md) for the API endpoints, examples, signing design, and current limitations.
 
 See [frontend/README.md](frontend/README.md) for frontend configuration, operation, and optional hosting directly from Spring Boot.
+
+## Host the backend on Render
+
+The root `Dockerfile` builds and tests the Java backend, then runs its JAR on the hosting provider's `PORT`. The `render.yaml` Blueprint requests one free Docker web service. Import this repository as a Render Blueprint to deploy it. The frontend remains hosted on ChatGPT Sites.
+
+`FRONTEND_ORIGIN` permits browser requests from the exact deployed ChatGPT Site origin. It does not add authentication. Once Render returns the backend HTTPS URL, set the Site's `dist/config.js` API origin and republish it.
+
+The current backend is a classroom prototype. Users, keys, and inboxes are in memory and disappear on restart. Render's free services can spin down when idle, so initial requests may take longer and demo data can be lost. No database is configured.
