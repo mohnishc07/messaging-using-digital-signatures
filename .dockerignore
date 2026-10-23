@@ -3,4 +3,6 @@
 **/node_modules
 **/.env
 **/.env.local
-frontend
+frontend/tools
+frontend/tests.html
+frontend/tests.js

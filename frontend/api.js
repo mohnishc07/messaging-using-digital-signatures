@@ -7,7 +7,7 @@
   function createApi(baseUrl = '', fetchImpl = (...args) => fetch(...args)) {
     async function request(path, init = {}, acceptedStatuses = []) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
+      const timeout = setTimeout(() => controller.abort(), 75000);
       try {
         const response = await fetchImpl(`${baseUrl.replace(/\/$/, '')}/api${path}`, {
           ...init, signal: controller.signal,

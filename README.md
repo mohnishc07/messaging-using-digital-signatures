@@ -66,8 +66,8 @@ See [frontend/README.md](frontend/README.md) for frontend configuration, operati
 
 ## Host the backend on Render
 
-The root `Dockerfile` builds and tests the Java backend, then runs its JAR on the hosting provider's `PORT`. The `render.yaml` Blueprint requests one free Docker web service. Import this repository as a Render Blueprint to deploy it. The frontend remains hosted on ChatGPT Sites.
+The root `Dockerfile` copies the four browser assets into Spring Boot's static resources, builds and tests the Java application, then runs its JAR on the hosting provider's `PORT`. The frontend and API are served together from one Render service. The `render.yaml` Blueprint requests one free Docker web service. Import this repository as a Render Blueprint to deploy it, or create a Docker web service from the public repository URL.
 
-`FRONTEND_ORIGIN` permits browser requests from the exact deployed ChatGPT Site origin. It does not add authentication. Once Render returns the backend HTTPS URL, set the Site's `dist/config.js` API origin and republish it.
+Open **https://signedchat-backend.onrender.com** for the deployed messaging interface. It uses same-origin `/api` calls, so no frontend API configuration is needed. `FRONTEND_ORIGIN` additionally permits browser requests from the existing ChatGPT Site origin if that frontend is connected later. It does not add authentication. Public repository deployments require a manual Render deployment after pushing changes.
 
-The current backend is a classroom prototype. Users, keys, and inboxes are in memory and disappear on restart. Render's free services can spin down when idle, so initial requests may take longer and demo data can be lost. No database is configured.
+The current backend is a classroom prototype. Users, keys, and inboxes are in memory and disappear on restart. Render's free services can spin down when idle, so initial requests may take longer and demo data can be lost. API requests allow 75 seconds for cold starts. No database is configured.

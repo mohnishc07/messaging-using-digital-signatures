@@ -1,6 +1,7 @@
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /build
 COPY backend/ ./
+COPY frontend/index.html frontend/styles.css frontend/api.js frontend/app.js ./src/main/resources/static/
 RUN chmod +x mvnw && ./mvnw -B -ntp package
 
 FROM eclipse-temurin:21-jre
