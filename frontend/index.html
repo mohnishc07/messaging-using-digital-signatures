@@ -1,47 +1,41 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#11232e">
-  <title>SignedChat · Secure messaging lab</title>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11232e"><title>SignedChat · Messaging & math</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="api.js" defer></script>
-  <script src="app.js" defer></script>
+  <script src="api.js" defer></script><script src="math.js" defer></script><script src="app.js" defer></script><script src="math-ui.js" defer></script>
 </head>
 <body>
-  <div class="workspace">
-    <aside>
-      <a href="#" class="brand"><span data-icon="shield"></span>signedchat<span>.</span></a>
-      <div class="sidebar-label">WORKSPACE</div>
-      <div class="nav-current"><span data-icon="chat"></span>Conversation<span>01</span></div>
-      <div class="sidebar-note"><span data-icon="shield"></span><p>Every message.<br>A signature to inspect.</p></div>
-      <div class="sidebar-bottom">SECURE MESSAGING PROTOTYPE<br><span>Ed25519 · Spring Boot</span></div>
-    </aside>
-    <main>
-      <header><span>WORKSPACE <b>/</b> CONVERSATION</span><span id="connection-status" class="connection-status" role="status">Connecting…</span></header>
-      <div class="page-heading">
-        <div><div class="eyebrow">SIGNED. SENT. VERIFIED.</div><h1>Two people. One conversation.</h1><p>Exchange messages and inspect the signatures behind them.</p></div>
-        <button id="refresh" class="button button-outline" type="button"><span data-icon="refresh"></span>Refresh inboxes</button>
-      </div>
-      <div id="connection-error" class="connection-error" role="alert" hidden></div>
-      <div class="mobile-tabs" aria-label="Choose conversation"><button type="button" data-tab="Alice" aria-pressed="true">Alice</button><button type="button" data-tab="Bob" aria-pressed="false">Bob</button></div>
+<div class="workspace">
+  <aside><a href="#" class="brand">◈ signedchat<span>.</span></a><div class="sidebar-label">WORKSPACE</div>
+    <nav class="dashboard-nav" aria-label="Dashboard"><button class="nav-current" data-view="messages" aria-pressed="true">Conversations <span>01</span></button><button data-view="users" aria-pressed="false">Users & keys <span>02</span></button><button data-view="math" aria-pressed="false">Signing math <span>03</span></button></nav>
+    <div class="sidebar-note"><p>Every message.<br>A signature to inspect.</p></div><div class="sidebar-bottom">SECURE MESSAGING PROTOTYPE<br><span>Ed25519 · Spring Boot</span></div>
+  </aside>
+  <main><header><span>WORKSPACE <b>/</b> <span id="section-label">CONVERSATIONS</span></span><span id="connection-status" class="connection-status" role="status">Connecting…</span></header>
+    <div id="connection-error" class="connection-error" role="alert" hidden></div>
+    <section id="view-messages" class="dashboard-view">
+      <div class="page-heading"><div><div class="eyebrow">SIGNED. SENT. VERIFIED.</div><h1>Choose people. Start a conversation.</h1><p>Select any two registered users, or create someone new in Users & keys.</p></div><button id="refresh" class="button button-outline">↻ Refresh inboxes</button></div>
+      <div class="identity-selectors"><label>Left user<select id="select-left" aria-label="Left user"></select></label><span class="between-users">⇄</span><label>Right user<select id="select-right" aria-label="Right user"></select></label></div>
+      <div class="mobile-tabs" aria-label="Choose conversation"><button type="button" data-tab="0" aria-pressed="true">Left user</button><button type="button" data-tab="1" aria-pressed="false">Right user</button></div>
       <div id="chat-grid" class="chat-grid show-alice"></div>
-      <footer><span>✓ Verification results come from the backend.</span><span>Demo identities · Messages are signed, not encrypted.</span></footer>
-      <noscript><p class="connection-error">Enable JavaScript to use the messaging interface.</p></noscript>
-    </main>
-  </div>
-  <template id="panel-template">
-    <section class="chat-panel">
-      <div class="chat-heading"><div class="avatar"><span class="initial"></span><span class="presence"></span></div><div><h2></h2><p class="peer-label"></p></div><span class="identity-label"></span></div>
-      <div class="trust-strip"><span data-icon="key"></span><span class="trust-label"></span><details class="public-key" hidden><summary>Public key</summary><code></code></details></div>
-      <div class="messages" role="log"></div>
-      <div class="composer">
-        <form><label class="sr-only"></label><textarea rows="2" disabled></textarea><button class="button button-primary send-button" type="submit" disabled><span data-icon="send"></span></button></form>
-        <div class="composer-caption"><span>Ed25519 signed</span><span>Enter to send · Shift + Enter for a new line</span></div>
-        <div aria-live="polite"><p class="notice" hidden></p></div>
-      </div>
+      <p class="hint">This shared prototype has no login. Selecting a user chooses a demo identity; it does not authenticate you.</p>
     </section>
-  </template>
-</body>
-</html>
+    <section id="view-users" class="dashboard-view" hidden>
+      <div class="page-heading"><div><div class="eyebrow">IDENTITIES & SIGNING KEYS</div><h1>Make room for more people.</h1><p>Anyone can create a new demo user. Every user gets an independent Ed25519 key pair.</p></div></div>
+      <form id="create-user-form" class="surface create-user-form"><label for="new-user-name">User name</label><div class="form-row"><input id="new-user-name" name="name" required maxlength="64" autocomplete="off" placeholder="e.g. Carol"><button id="create-user" class="button button-primary" type="submit">Create user & reveal keys</button></div><p class="hint">Both keys appear once after creation. Save them before closing the dialog.</p><p id="create-notice" class="notice" role="status" hidden></p></form>
+      <div class="section-heading"><h2>Registered users</h2><span id="user-count"></span></div><div id="user-directory" class="user-directory"></div>
+    </section>
+    <section id="view-math" class="dashboard-view" hidden>
+      <div class="page-heading"><div><div class="eyebrow">LOOK INSIDE ED25519</div><h1>Follow the numbers.</h1><p>See the exact byte inputs, hashes, scalars, curve points, signature, and verification equation.</p></div></div>
+      <div class="surface"><p class="math-warning">This lab creates a disposable example key. Its secret values are intentionally visible here. Chat private keys are never fetched again or used in this trace. Actual chat signing uses Java's cryptographic library.</p>
+        <form id="math-form"><div class="form-row"><label>Sender<input id="math-sender" value="Alice" required maxlength="64"></label><label>Recipient<input id="math-recipient" value="Bob" required maxlength="64"></label></div><label>Message<textarea id="math-message" rows="3" maxlength="4096">Hello Bob!</textarea></label><button id="run-math" class="button button-primary">Generate disposable key & show the math</button><p id="math-status" role="status"></p></form>
+      </div><div id="math-output"></div>
+    </section>
+    <footer><span>✓ Verification results come from the backend.</span><span>Demo identities · Messages are signed, not encrypted.</span></footer>
+  </main>
+</div>
+<template id="panel-template"><section class="chat-panel"><div class="chat-heading"><div class="avatar"><span class="initial"></span><span class="presence"></span></div><div><h2></h2><p class="peer-label"></p></div></div><div class="trust-strip"><span class="trust-label"></span></div><div class="messages" role="log"></div><div class="composer"><form><label class="sr-only"></label><textarea rows="2" disabled></textarea><button class="button button-primary send-button" type="submit" disabled>Send ↗</button></form><div class="composer-caption"><span>Ed25519 signed</span><span>Enter to send · Shift + Enter for a new line</span></div><div aria-live="polite"><p class="notice" hidden></p></div></div></section></template>
+<dialog id="keys-dialog" aria-labelledby="keys-title"><h2 id="keys-title">Save your keys now</h2><p id="keys-owner"></p><p class="key-warning"><strong>Keep your private key secret.</strong> Anyone with it can forge your signatures. Store it safely; never share it or paste it into chat. These keys will not be shown again after you close this dialog.</p><label for="created-public-key">Public key · Base64 X.509</label><textarea id="created-public-key" readonly rows="3" spellcheck="false" autocomplete="off"></textarea><label for="created-private-key">Private key · Base64 PKCS#8</label><textarea id="created-private-key" readonly rows="3" spellcheck="false" autocomplete="off"></textarea><p class="hint">This prototype's server also retains the private key to sign messages. Closing this dialog removes the browser's displayed copy; it does not erase your saved copy or the server's key.</p><div class="dialog-actions"><button id="copy-keys" class="button button-outline">Copy both keys</button><button id="hide-keys" class="button button-primary">Close and hide keys</button></div><p id="key-copy-status" role="status"></p></dialog>
+<noscript>Enable JavaScript to use SignedChat.</noscript>
+</body></html>

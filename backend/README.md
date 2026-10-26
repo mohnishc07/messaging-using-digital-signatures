@@ -53,7 +53,9 @@ Base URL: `http://localhost:8080`. All bodies are JSON.
 but their public key is not in the trusted store, so every message from them is rejected —
 handy for simulating an attacker.
 
-Response: `{ "name": "Alice", "publicKey": "<base64 X.509 key>", "trusted": true }`
+Creation response: `{ "name": "Alice", "publicKey": "<base64 X.509 key>", "privateKey": "<base64 PKCS#8 key>", "trusted": true }`
+
+The private key is returned only by a successful creation request, with `Cache-Control: no-store`. Save it securely; user list and lookup endpoints never return it. The server still retains the key for signing. The dashboard displays the pair once and clears the displayed values when the dialog closes.
 
 ### `POST /api/messages/sign`
 

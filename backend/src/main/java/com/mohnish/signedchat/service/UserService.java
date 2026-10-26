@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Server-side registry of chat users. The server generates and holds each
- * user's Ed25519 key pair; only the public key is ever returned by the API.
+ * user's Ed25519 key pair. The private key is returned only at creation.
  */
 @Service
 public class UserService {

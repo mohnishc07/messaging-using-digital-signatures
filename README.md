@@ -40,7 +40,7 @@ cd frontend
 .\start.cmd
 ```
 
-Open **http://127.0.0.1:5173**. Create Alice and Bob, then exchange messages. Keep both terminals running.
+Open **http://127.0.0.1:5173**. Create users in **Users & keys**, save the one-time key reveal, then select any two users in **Conversations**. **Signing math** traces Ed25519 with disposable example keys. Keep both terminals running.
 
 On macOS / Linux, run `cd frontend` and `java tools/DevServer.java`.
 
@@ -66,7 +66,7 @@ See [frontend/README.md](frontend/README.md) for frontend configuration, operati
 
 ## Host the backend on Render
 
-The root `Dockerfile` copies the four browser assets into Spring Boot's static resources, builds and tests the Java application, then runs its JAR on the hosting provider's `PORT`. The frontend and API are served together from one Render service. The `render.yaml` Blueprint requests one free Docker web service. Import this repository as a Render Blueprint to deploy it, or create a Docker web service from the public repository URL.
+The root `Dockerfile` copies the browser assets into Spring Boot's static resources, builds and tests the Java application, then runs its JAR on the hosting provider's `PORT`. The frontend and API are served together from one Render service. The `render.yaml` Blueprint requests one free Docker web service. Import this repository as a Render Blueprint to deploy it, or create a Docker web service from the public repository URL.
 
 Open **https://signedchat-backend.onrender.com** for the deployed messaging interface. It uses same-origin `/api` calls, so no frontend API configuration is needed. `FRONTEND_ORIGIN` additionally permits browser requests from the existing ChatGPT Site origin if that frontend is connected later. It does not add authentication. Public repository deployments require a manual Render deployment after pushing changes.
 

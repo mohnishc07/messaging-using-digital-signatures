@@ -15,7 +15,7 @@ class DevServer {
         URI backendUri = URI.create(backend);
         if (!java.util.Set.of("http", "https").contains(backendUri.getScheme()) || backendUri.getHost() == null) throw new IllegalArgumentException("Backend must be an HTTP(S) URL");
         Path root = Path.of("").toAbsolutePath();
-        Map<String, String> files = Map.of("/index.html", "text/html; charset=utf-8", "/styles.css", "text/css; charset=utf-8", "/api.js", "text/javascript; charset=utf-8", "/app.js", "text/javascript; charset=utf-8", "/tests.html", "text/html; charset=utf-8", "/tests.js", "text/javascript; charset=utf-8");
+        Map<String, String> files = Map.of("/index.html", "text/html; charset=utf-8", "/styles.css", "text/css; charset=utf-8", "/api.js", "text/javascript; charset=utf-8", "/app.js", "text/javascript; charset=utf-8", "/math.js", "text/javascript; charset=utf-8", "/math-ui.js", "text/javascript; charset=utf-8", "/tests.html", "text/html; charset=utf-8", "/tests.js", "text/javascript; charset=utf-8");
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
         server.createContext("/", exchange -> {

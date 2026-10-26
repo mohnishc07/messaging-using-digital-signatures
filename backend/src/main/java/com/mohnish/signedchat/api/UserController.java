@@ -1,6 +1,7 @@
 package com.mohnish.signedchat.api;
 
 import com.mohnish.signedchat.api.dto.CreateUserRequest;
+import com.mohnish.signedchat.api.dto.CreatedUserResponse;
 import com.mohnish.signedchat.api.dto.ReceiveResponse;
 import com.mohnish.signedchat.api.dto.SignedMessageDto;
 import com.mohnish.signedchat.api.dto.UserResponse;
@@ -8,10 +9,10 @@ import com.mohnish.signedchat.model.ChatUser;
 import com.mohnish.signedchat.service.MessagingService;
 import com.mohnish.signedchat.service.UserService;
 import jakarta.validation.Valid;
-import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/users")
@@ -33,13 +35,14 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserResponse> create(
+    public ResponseEntity<CreatedUserResponse> create(
         @Valid @RequestBody CreateUserRequest request
     ) throws GeneralSecurityException {
         ChatUser user = users.create(request.name(), request.isTrusted());
         return ResponseEntity.created(
-            URI.create("/api/users/" + user.getName())
-        ).body(UserResponse.of(user, users.isTrusted(user.getName())));
+            UriComponentsBuilder.fromPath("/api/users").pathSegment(user.getName()).build().encode().toUri()
+        ).cacheControl(CacheControl.noStore())
+         .body(CreatedUserResponse.of(user, users.isTrusted(user.getName())));
     }
 
     @GetMapping
