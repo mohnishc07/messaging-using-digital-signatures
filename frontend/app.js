@@ -50,7 +50,7 @@
       entry.panel.setAttribute('aria-label', (name || (i ? 'Right user' : 'Left user')) + "'s conversation");
       entry.panel.querySelector('h2').textContent = name || 'Choose a user'; entry.panel.querySelector('.initial').textContent = name ? Array.from(name)[0] : '?';
       entry.panel.querySelector('.peer-label').textContent = peer ? 'Chatting with ' + peer : 'Choose a recipient';
-      entry.panel.querySelector('.trust-label').textContent = user ? (user.trusted ? '✓ Signing key registered as trusted' : 'Signing key is not trusted') : 'Create or choose a user to start';
+      entry.panel.querySelector('.trust-label').textContent = user ? (user.trusted ? '✓ Key marked trusted by server' : 'Signing key is not trusted') : 'Create or choose a user to start';
       entry.textarea.placeholder = peer ? 'Message ' + peer + '…' : 'Choose a recipient…';
       entry.panel.querySelector('label').textContent = 'Message from ' + (name || 'left user') + ' to ' + (peer || 'right user');
       entry.panel.querySelector('.send-button').setAttribute('aria-label', 'Send from ' + (name || 'left user') + ' to ' + (peer || 'right user'));
@@ -67,7 +67,7 @@
     document.querySelector('#user-count').textContent = state.users.length + ' users';
     if (!state.users.length) directory.append(el('p', '', 'No users yet. Create the first user above.'));
     state.users.forEach(user => {
-      const card = el('article', 'surface user-card'); card.append(el('h3', '', user.name), el('p', '', user.trusted ? 'Ed25519 · Trusted key' : 'Ed25519 · Untrusted key'));
+      const card = el('article', 'surface user-card'); card.append(el('h3', '', user.name), el('p', '', user.trusted ? 'Ed25519 · Server-trusted key' : 'Ed25519 · Untrusted key'));
       const buttons = el('div', 'form-row'); [0,1].forEach(i => { const button = el('button', 'button button-outline', i ? 'Use on right' : 'Use on left'); button.disabled = state.busy; button.addEventListener('click', async () => { if (state.selected[1-i] === user.name) state.selected[1-i] = ''; state.selected[i] = user.name; panels[i].textarea.value = ''; showView('messages'); await refresh(); }); buttons.append(button); }); card.append(buttons); directory.append(card);
     });
     controls();
