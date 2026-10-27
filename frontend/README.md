@@ -23,8 +23,8 @@ Session identity and public state live only in memory. No keys or identity are p
 
 ## Mail workspace
 
-- **Inbox:** all messages received by the current demo user, regardless of sender. Search by sender/message; select an item to read it, inspect/copy its signed package, reply, or trace its payload.
-- **Compose / search:** filter registered recipients by username or Base64 public key. Sign and send as the current demo identity. Message content is transmitted exactly; whitespace-only submissions are disabled.
+- **Inbox:** all messages received by the current demo user, regardless of sender, with a message list and full reading pane. Search by sender/message; select an item to read it, inspect/copy its Ed25519 signed package, reply, or trace its payload. The TIME field shows a valid ISO timestamp only if the server supplies `timestamp`; otherwise it explicitly says **Not provided by server**. The current backend does not supply timestamps, so no sent/received time is invented.
+- **Compose / search:** search registered recipients by username or Base64 public key from the workspace header or compose directory. Clicking a match immediately opens that user's compose view with their name and full public key (plus a public-key copy button). The To/From header, message body, and Sign & Send action use the current demo identity. Message content is transmitted exactly; whitespace-only submissions are disabled.
 - **User simulation:** select any two registered users and send from either side without switching the workspace identity. On narrow screens, switch between panels using tabs. Register more participants through the Home/create flow.
 - **Signing math:** the existing disposable-key Ed25519 trace, including complete scalar traces and native WebCrypto cross-check. Math generation/output is invalidated and cleared on logout.
 

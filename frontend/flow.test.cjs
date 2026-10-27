@@ -75,6 +75,7 @@ test('mail inbox contains every sender and search/reply/compose use current iden
     ui.$('.mail-row').click(); assert.match(ui.$('#mail-reader').textContent,/Second/);
     ui.$('#mail-reader .button').click(); assert.equal(ui.$('#view-compose').hidden,false);
     assert.equal(ui.$('#compose-to').textContent,'Mallory');
+    assert.equal(ui.$('#compose-public-key').textContent,'public-Mallory');
     ui.$('#recipient-search').value='public-Bob'; ui.$('#recipient-search').dispatchEvent(new ui.window.Event('input'));
     assert.equal(ui.window.document.querySelectorAll('.recipient-row').length,1);
     ui.$('.recipient-row').click(); ui.$('#compose-content').value='  exact\ncontent  '; ui.submit('#compose-form'); await ui.flush();
@@ -90,6 +91,7 @@ test('logout clears keys, identity, received messages and drafts; reentry is iso
     assert.equal(ui.$('#screen-home').hidden,false); assert.equal(ui.$('#screen-workspace').hidden,true);
     assert.equal(ui.$('#logout').hidden,true); assert.equal(ui.$('#session-name').textContent,'');
     assert.equal(ui.$('#vault-private').value,''); assert.equal(ui.$('#compose-content').value,'');
+    assert.equal(ui.$('#compose-public-key').textContent,''); assert.equal(ui.$('#compose-key-section').hidden,true);
     assert.equal(ui.$('#mail-list').childElementCount,0); assert.equal(ui.$('#recipient-results').childElementCount,0);
     await ui.login('Bob'); await ui.enter(); assert.equal(ui.$('#compose-from').textContent,'Bob');
     assert.equal(ui.window.document.querySelectorAll('.mail-row').length,0);
@@ -129,5 +131,57 @@ test('logout invalidates an in-flight math trace and clears disposable results',
     assert.equal(typeof release,'function'); ui.$('#logout').click(); release({}); await ui.flush();
     assert.equal(ui.$('#math-output').childElementCount,0); assert.equal(ui.$('#math-status').textContent,'');
     assert.equal(ui.$('#run-math').disabled,false);
+  } finally { ui.dom.window.close(); }
+});
+test('workspace search finds username or full public key and immediately opens recipient compose',async () => {
+  const ui=boot();
+  try {
+    await ui.login(); await ui.enter();
+    const search=ui.$('#workspace-user-search');
+    search.value='bob'; search.dispatchEvent(new ui.window.Event('input'));
+    assert.equal(ui.$('#workspace-user-results').hidden,false);
+    assert.equal(ui.window.document.querySelectorAll('#workspace-user-results .recipient-row').length,1);
+    assert.equal(ui.$('#workspace-user-results .recipient-row').disabled,false);
+    ui.$('#workspace-user-results .recipient-row').click();
+    assert.equal(ui.$('#view-compose').hidden,false); assert.equal(ui.$('#view-inbox').hidden,true);
+    assert.equal(ui.$('#compose-title').textContent,'Message to Bob');
+    assert.equal(ui.$('#compose-to').textContent,'Bob');
+    assert.equal(ui.$('#compose-public-key').textContent,'public-Bob');
+    assert.equal(ui.$('#compose-key-section').hidden,false);
+    assert.equal(ui.window.document.activeElement.id,'compose-content');
+    assert.equal(ui.$('#workspace-user-results').hidden,true);
+    ui.$('#copy-recipient-key').click(); await ui.flush(); assert.deepEqual(ui.records.copied,['public-Bob']);
+    search.value='public-Mallory'; search.dispatchEvent(new ui.window.Event('input'));
+    assert.equal(ui.window.document.querySelectorAll('#workspace-user-results .recipient-row').length,1);
+    ui.$('#workspace-user-results .recipient-row').click();
+    assert.equal(ui.$('#compose-public-key').textContent,'public-Mallory');
+    search.value='not-registered'; search.dispatchEvent(new ui.window.Event('input'));
+    assert.match(ui.$('#workspace-user-results').textContent,/No matching/);
+    search.dispatchEvent(new ui.window.KeyboardEvent('keydown',{key:'Escape'}));
+    assert.equal(ui.$('#workspace-user-results').hidden,true);
+  } finally { ui.dom.window.close(); }
+});
+test('inbox reading pane has all senders, backend verification, signature, and honest missing time',async () => {
+  const ui=boot();
+  try {
+    await ui.login(); await ui.enter(); ui.$('.mail-row').click();
+    assert.match(ui.$('#mail-reader').textContent,/First/);
+    assert.match(ui.$('#mail-reader').textContent,/Backend accepted/);
+    assert.match(ui.$('#mail-reader .message-details').textContent,/example-signature/);
+    assert.equal(ui.$('#mail-reader .message-time').textContent,'Not provided by server');
+    assert.equal(ui.$('#mail-reader time'),null);
+  } finally { ui.dom.window.close(); }
+});
+test('inbox renders valid server timestamps but never fabricates invalid timestamps',async () => {
+  const ui=boot({getInbox:async () => [
+    {...message('Bob','Alice'),timestamp:'2026-10-27T12:00:00Z'},
+    {...message('Mallory','Alice'),timestamp:'invalid timestamp'}
+  ]});
+  try {
+    await ui.login(); await ui.enter(); ui.$('.mail-row').click();
+    assert.equal(ui.$('#mail-reader time').dateTime,'2026-10-27T12:00:00Z');
+    ui.window.document.querySelectorAll('.mail-row')[1].click();
+    assert.equal(ui.$('#mail-reader time'),null);
+    assert.equal(ui.$('#mail-reader .message-time').textContent,'Not provided by server');
   } finally { ui.dom.window.close(); }
 });

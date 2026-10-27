@@ -41,6 +41,7 @@
     $('#open-vault').disabled = state.busy;
     $('#compose-content').disabled = state.busy;
     document.querySelectorAll('[data-view]').forEach(button => { button.disabled = state.busy; });
+    document.querySelectorAll('.recipient-row').forEach(button => { button.disabled = state.busy; });
     $('#send-mail').disabled = state.busy || !state.user || !state.recipient || !$('#compose-content').value.trim();
     panels.forEach((entry,i) => {
       const allowed = Boolean(state.user && state.selected[i] && state.selected[1-i] && state.selected[i] !== state.selected[1-i]);
@@ -72,6 +73,9 @@
     document.querySelectorAll('input,textarea').forEach(node => { node.value = ''; });
     document.querySelectorAll('.notice').forEach(node => { node.textContent = ''; node.hidden = true; });
     $('#mail-list').replaceChildren(); $('#mail-reader').replaceChildren(); $('#recipient-results').replaceChildren();
+    $('#workspace-user-results').replaceChildren(); $('#workspace-user-results').hidden = true;
+    $('#compose-public-key').textContent = ''; $('#compose-key-section').hidden = true;
+    $('#compose-title').textContent = 'New signed message'; $('#copy-recipient-key').textContent = 'Copy public key';
     $('#compose-from').textContent = ''; $('#compose-to').textContent = 'Select a recipient'; $('#inbox-count').textContent = '0';
     $('#connection-status').textContent = 'Not refreshed'; $('#connection-status').className = 'connection-status';
     panels.forEach(entry => { entry.log.replaceChildren(); entry.version = null; entry.panel.querySelector('h2').textContent = ''; entry.panel.querySelector('.peer-label').textContent = ''; entry.panel.querySelector('.initial').textContent = ''; entry.panel.querySelector('.trust-strip').textContent = ''; });
@@ -127,9 +131,9 @@
     const node = el('div','empty-state'); node.append(el('span','empty-icon','▤'),el('h3','',title),el('p','',text)); return node;
   }
   function signatureDetails(message) {
-    const details = el('details','message-details'); details.append(el('summary','','Inspect signature & signed package'));
+    const details = el('details','message-details'); details.append(el('summary','','Inspect Ed25519 signature & signed package'));
     const content = el('div','detail-content'), list = el('dl');
-    [['Sender',message.senderId],['Recipient',message.receiverId],['Signature · Base64',message.signature]].forEach(([name,value]) => list.append(el('dt','',name),el('dd','',value)));
+    [['Sender',message.senderId],['Recipient',message.receiverId],['Ed25519 signature · Base64',message.signature]].forEach(([name,value]) => list.append(el('dt','',name),el('dd','',value)));
     const actions = el('div','reader-actions'), copy = el('button','text-button','Copy signed package'), trace = el('button','text-button','Trace payload in math lab →');
     copy.type = trace.type = 'button';
     copy.addEventListener('click', async () => {
@@ -142,6 +146,41 @@
       showView('math'); $('#run-math').focus();
     });
     actions.append(copy,trace); content.append(list,actions); details.append(content); return details;
+  }
+  function timestampNode(message) {
+    // No client clock fallback: the current API does not supply a timestamp.
+    const value = message.timestamp;
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value))) {
+      const time = el('time','message-time',new Date(value).toLocaleString()); time.dateTime = value; return time;
+    }
+    return el('span','message-time unavailable-time','Not provided by server');
+  }
+  function selectRecipient(name) {
+    if (state.busy || !state.user || !state.users.some(user => user.name === name)) return;
+    state.recipient = name;
+    $('#workspace-user-search').value = ''; $('#workspace-user-results').hidden = true;
+    notice('#compose-notice','','');
+    renderRecipients(); showView('compose'); $('#compose-content').focus();
+  }
+  function matchingUsers(query) {
+    const filter = query.toLocaleLowerCase().trim(), keyFilter = filter.replace(/\s/g,'');
+    return state.users.filter(user => !filter || user.name.toLocaleLowerCase().includes(filter) || user.publicKey.toLocaleLowerCase().includes(keyFilter));
+  }
+  function recipientButton(user) {
+    const button = el('button','recipient-row' + (state.recipient === user.name ? ' selected' : '')); button.type = 'button';
+    button.disabled = state.busy;
+    button.setAttribute('aria-pressed',String(state.recipient === user.name));
+    button.append(el('strong','',user.name),el('code','',user.publicKey.slice(0,18) + '…' + user.publicKey.slice(-12)));
+    button.addEventListener('click',() => selectRecipient(user.name));
+    return button;
+  }
+  function renderUserSearch() {
+    const query = $('#workspace-user-search').value.trim(), results = $('#workspace-user-results');
+    results.replaceChildren(); results.hidden = !query || !state.user;
+    if (results.hidden) return;
+    const matches = matchingUsers(query);
+    matches.forEach(user => results.append(recipientButton(user)));
+    if (!matches.length) results.append(el('p','hint','No matching registered users.'));
   }
   function renderInbox() {
     $('#inbox-count').textContent = state.inbox.length;
@@ -165,8 +204,9 @@
     const heading = el('div','reader-title'); heading.append(el('h2','','Signed message'),el('span','verification-pill','✓ Backend accepted'));
     const meta = el('div','reader-meta');
     [['FROM',message.senderId],['TO',message.receiverId]].forEach(([label,value]) => { const row = el('p'); row.append(el('b','',label),el('span','',value)); meta.append(row); });
+    const timeRow = el('p'); timeRow.append(el('b','','TIME'),timestampNode(message)); meta.append(timeRow);
     const actions = el('div','reader-actions'), reply = el('button','button button-outline','Reply →');
-    reply.type = 'button'; reply.addEventListener('click', () => { state.recipient = message.senderId; $('#compose-content').value = ''; renderRecipients(); showView('compose'); $('#compose-content').focus(); });
+    reply.type = 'button'; reply.addEventListener('click', () => { if (state.busy) return; $('#compose-content').value = ''; selectRecipient(message.senderId); });
     actions.append(reply);
     reader.append(heading,meta,el('div','message-body',message.message),signatureDetails(message),actions);
   }
@@ -174,15 +214,15 @@
     $('#compose-from').textContent = state.user?.name || '';
     if (!state.users.some(user => user.name === state.recipient)) state.recipient = '';
     $('#compose-to').textContent = state.recipient || 'Select a recipient';
-    const filter = $('#recipient-search').value.toLocaleLowerCase().trim(), keyFilter = filter.replace(/\s/g,'');
-    const matches = state.users.filter(user => !filter || user.name.toLocaleLowerCase().includes(filter) || user.publicKey.toLocaleLowerCase().includes(keyFilter));
+    const recipient = state.users.find(user => user.name === state.recipient);
+    $('#compose-title').textContent = recipient ? 'Message to ' + recipient.name : 'New signed message';
+    $('#compose-public-key').textContent = recipient?.publicKey || '';
+    $('#compose-key-section').hidden = !recipient;
+    $('#copy-recipient-key').textContent = 'Copy public key';
+    const matches = matchingUsers($('#recipient-search').value);
     const results = $('#recipient-results'); results.replaceChildren();
     matches.forEach(user => {
-      const button = el('button','recipient-row' + (state.recipient === user.name ? ' selected' : '')); button.type = 'button';
-      button.setAttribute('aria-pressed',String(state.recipient === user.name));
-      button.append(el('strong','',user.name),el('code','',user.publicKey.slice(0,18) + '…' + user.publicKey.slice(-12)));
-      button.addEventListener('click', () => { if (state.busy) return; state.recipient = user.name; renderRecipients(); controls(); });
-      results.append(button);
+      results.append(recipientButton(user));
     });
     if (!matches.length) results.append(el('p','hint','No matching registered users. Create another identity through the Home screen.'));
     controls();
@@ -232,7 +272,7 @@
       const key = JSON.stringify([...pair].sort()); state.messages = reconcileConversation(cache.get(key) || [],inboxes.flat()); cache.set(key,state.messages);
     }
     state.connected = true; $('#connection-status').textContent = 'Backend connected'; $('#connection-status').className = 'connection-status connected';
-    renderInbox(); renderRecipients(); renderSimulation();
+    renderInbox(); renderRecipients(); renderSimulation(); renderUserSearch();
   }
   async function refresh(current) {
     try { await loadWorkspace(current); }
@@ -256,6 +296,15 @@
   }));
   $('#inbox-search').addEventListener('input',renderInbox);
   $('#recipient-search').addEventListener('input',renderRecipients);
+  $('#workspace-user-search').addEventListener('input',renderUserSearch);
+  $('#workspace-user-search').addEventListener('keydown',event => { if (event.key === 'Escape') { $('#workspace-user-search').value = ''; renderUserSearch(); } });
+  document.addEventListener('click',event => { if (!event.target.closest('.workspace-user-search')) $('#workspace-user-results').hidden = true; });
+  $('#copy-recipient-key').addEventListener('click',async () => {
+    const epoch = state.epoch, value = $('#compose-public-key').textContent;
+    if (!value) return;
+    try { await navigator.clipboard.writeText(value); if (epoch === state.epoch && value === $('#compose-public-key').textContent) $('#copy-recipient-key').textContent = 'Copied public key'; }
+    catch { if (epoch === state.epoch) notice('#compose-notice','error','Clipboard unavailable. Select the public key and copy it manually.'); }
+  });
   $('#compose-content').addEventListener('input',controls);
   $('#compose-form').addEventListener('submit', event => {
     event.preventDefault(); if (!state.user || !state.recipient || !$('#compose-content').value.trim()) return;
