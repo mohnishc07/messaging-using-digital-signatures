@@ -30,6 +30,7 @@
     return {
       listUsers: () => request('/users'),
       getUser: name => request(`/users/${encodeURIComponent(name)}`),
+      getUserKeys: name => request(`/users/${encodeURIComponent(name)}/keys`, { cache: 'no-store' }),
       createUser: body => request('/users', post(body)),
       getInbox: name => request(`/users/${encodeURIComponent(name)}/inbox`),
       sign: body => request('/messages/sign', post(body)),

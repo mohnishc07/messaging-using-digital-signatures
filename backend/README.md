@@ -38,6 +38,7 @@ Base URL: `http://localhost:8080`. All bodies are JSON.
 | POST   | `/api/users`               | Create a user and generate their key pair                | `201 Created`          |
 | GET    | `/api/users`               | List all users and their public keys                     | `200 OK`               |
 | GET    | `/api/users/{name}`        | Get one user                                             | `200 OK`               |
+| GET    | `/api/users/{username}/keys` | Retrieve both server-held demo keys by username          | `200 OK`               |
 | POST   | `/api/messages/sign`       | Sign a message with the sender's key (no delivery)       | `200 OK`               |
 | POST   | `/api/messages`            | Sign a message **and** deliver it to the recipient       | `201 Created`          |
 | POST   | `/api/users/{name}/inbox`  | Verify an already-signed message and deliver it          | `201 Created`          |
@@ -55,7 +56,9 @@ handy for simulating an attacker.
 
 Creation response: `{ "name": "Alice", "publicKey": "<base64 X.509 key>", "privateKey": "<base64 PKCS#8 key>", "trusted": true }`
 
-The private key is returned only by a successful creation request, with `Cache-Control: no-store`. Save it securely; user list and lookup endpoints never return it. The server still retains the key for signing. The dashboard displays the pair once and clears the displayed values when the dialog closes.
+Creation and `GET /api/users/{username}/keys` return both keys with `Cache-Control: no-store`. The latter returns the existing pair, not a newly generated one, with the same response fields; unknown users return 404. Ordinary user list and lookup responses remain public-only. The server retains keys for signing.
+
+The key lookup is deliberately unauthenticated for this classroom demo: anyone who knows a registered username can retrieve its private key. It does not prove user ownership and must not hold real secrets. On Page 1 (**Direct chats**), enter an existing username to select it on the left and display both keys. Hide keys to clear them from the displayed fields. The creation dialog also clears when closed, but demo keys can be retrieved again.
 
 ### `POST /api/messages/sign`
 

@@ -3,7 +3,7 @@ package com.mohnish.signedchat.api.dto;
 import com.mohnish.signedchat.model.ChatUser;
 import java.util.Base64;
 
-/** Only the successful creation response contains the PKCS#8 private key. */
+/** Creation returns the PKCS#8 private key; explicit demo key lookup also exposes it. */
 public record CreatedUserResponse(String name, String publicKey, String privateKey, boolean trusted) {
     public static CreatedUserResponse of(ChatUser user, boolean trusted) {
         Base64.Encoder encoder = Base64.getEncoder();

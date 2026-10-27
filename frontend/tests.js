@@ -8,6 +8,18 @@
     let url; const api = createApi('http://localhost:8080/', async path => { url = path; return new Response('[]'); });
     await api.getInbox('Alice/Bob'); equal(url, 'http://localhost:8080/api/users/Alice%2FBob/inbox');
   });
+  test('Demo key lookup encodes the username and bypasses browser caching', async () => {
+    let url, options;
+    const api = createApi('', async (path, request) => { url = path; options = request; return new Response('{"name":"Demo User","publicKey":"public-example","privateKey":"private-example"}'); });
+    const pair = await api.getUserKeys('Demo User/#?');
+    equal(url, '/api/users/Demo%20User%2F%23%3F/keys');
+    equal(options.cache, 'no-store'); equal(pair.privateKey, 'private-example');
+  });
+  test('Unknown demo user lookup reports 404', async () => {
+    const api = createApi('', async () => new Response('{"detail":"Unknown user"}', {status:404}));
+    try { await api.getUserKeys('missing'); throw new Error('Expected failure'); }
+    catch (error) { if (!(error instanceof ApiError)) throw error; equal(error.status, 404); }
+  });
   test('Exact message content survives request encoding', async () => {
     const content = '  Hello\nBob 🔐 <script>alert(1)</script>  '; let sent;
     const api = createApi('', async (_, request) => { sent = JSON.parse(request.body); return new Response('{"delivered":true}'); });

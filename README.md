@@ -40,7 +40,7 @@ cd frontend
 .\start.cmd
 ```
 
-Open **http://127.0.0.1:5173**. Create users in **Users & keys**, save the one-time key reveal, then select any two users in **Conversations**. **Signing math** traces Ed25519 with disposable example keys. Keep both terminals running.
+Open **http://127.0.0.1:5173**. Create users in **Users & keys**, then select any two users in **Direct chats**. On that first page, enter an existing demo username to display both its public and private keys. This username lookup is not authentication; demo keys are accessible to anyone who knows the name. **Signing math** traces Ed25519 with disposable example keys. Keep both terminals running.
 
 On macOS / Linux, run `cd frontend` and `java tools/DevServer.java`.
 
@@ -48,7 +48,7 @@ The frontend launcher uses the same JDK 21+ prerequisite as the backend. Its loc
 
 ## Check the frontend
 
-With the frontend server running, open **http://127.0.0.1:5173/tests.html** for the eight dependency-free browser tests.
+With the frontend server running, open **http://127.0.0.1:5173/tests.html** for the dependency-free browser tests.
 
 ## Test the backend
 

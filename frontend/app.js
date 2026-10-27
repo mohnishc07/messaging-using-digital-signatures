@@ -8,9 +8,16 @@
   const selects = [document.querySelector('#select-left'), document.querySelector('#select-right')];
   const createButton = document.querySelector('#create-user');
   const dialog = document.querySelector('#keys-dialog');
+  function clearDemoKeys() {
+    document.querySelector('#demo-public-key').value = '';
+    document.querySelector('#demo-private-key').value = '';
+    document.querySelector('#demo-key-title').textContent = 'Demo user keys';
+    document.querySelector('#demo-key-display').hidden = true;
+  }
   function el(tag, cls, text) { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; }
   function notice(node, kind, text) { node.className = 'notice ' + kind; node.textContent = text; node.hidden = !text; }
   function showView(view) {
+    clearDemoKeys();
     document.querySelectorAll('.dashboard-view').forEach(node => { node.hidden = node.id !== 'view-' + view; });
     document.querySelectorAll('[data-view]').forEach(button => { const active = button.dataset.view === view; button.classList.toggle('nav-current', active); button.setAttribute('aria-pressed', active); });
     document.querySelector('#section-label').textContent = view === 'math' ? 'SIGNING MATH' : view === 'users' ? 'USERS & KEYS' : 'CONVERSATIONS';
@@ -18,6 +25,7 @@
   function controls() {
     document.querySelector('#refresh').disabled = state.busy;
     createButton.disabled = state.busy || !state.connected;
+    document.querySelector('#demo-login').disabled = state.busy;
     selects.forEach(select => { select.disabled = state.busy || !state.connected; });
     panels.forEach((entry, i) => {
       const canSend = state.connected && !state.busy && state.selected[i] && state.selected[1-i] && state.selected[i] !== state.selected[1-i];
@@ -88,11 +96,40 @@
     catch (error) { state.connected = false; status.textContent = 'Backend unavailable'; status.className = 'connection-status error'; errorBox.textContent = error.message + ' Check the backend, then refresh.'; errorBox.hidden = false; }
     finally { state.busy = false; render(); }
   }
+  document.querySelector('#hide-demo-keys').addEventListener('click', clearDemoKeys);
+  document.querySelector('#demo-username').addEventListener('input', () => {
+    clearDemoKeys(); notice(document.querySelector('#demo-login-status'), '', '');
+  });
+  document.querySelector('#demo-login-form').addEventListener('submit', async event => {
+    event.preventDefault(); if (state.busy) return;
+    clearDemoKeys();
+    const name = document.querySelector('#demo-username').value.trim();
+    const note = document.querySelector('#demo-login-status');
+    notice(note, '', '');
+    if (!name) { notice(note, 'error', 'Enter a registered username.'); return; }
+    state.busy = true; controls();
+    document.querySelector('#demo-username').disabled = true;
+    try {
+      let pair = await api.getUserKeys(name);
+      // Refresh public state first; never put the secret in state, cache, or browser storage.
+      state.selected[0] = pair.name;
+      if (state.selected[1] === pair.name) state.selected[1] = '';
+      panels.forEach(entry => { entry.textarea.value = ''; });
+      await fetchState(); render();
+      document.querySelector('#demo-key-title').textContent = 'Keys for ' + pair.name;
+      document.querySelector('#demo-public-key').value = pair.publicKey;
+      document.querySelector('#demo-private-key').value = pair.privateKey;
+      pair = null;
+      document.querySelector('#demo-key-display').hidden = false;
+      notice(note, 'success', 'Demo identity opened on the left. This does not authenticate ownership.');
+    } catch (error) { clearDemoKeys(); notice(note, 'error', error.message); }
+    finally { state.busy = false; document.querySelector('#demo-username').disabled = false; controls(); }
+  });
   function clearKeys() {
     document.querySelector('#created-private-key').value = ''; document.querySelector('#created-public-key').value = '';
     document.querySelector('#keys-owner').textContent = ''; document.querySelector('#key-copy-status').textContent = '';
   }
-  dialog.addEventListener('close', () => { clearKeys(); notice(document.querySelector('#create-notice'), 'success', 'Keys hidden. Keep your saved private key secret; it cannot be displayed again.'); });
+  dialog.addEventListener('close', () => { clearKeys(); notice(document.querySelector('#create-notice'), 'success', 'Keys hidden. Demo keys can be shown again by username on Direct chats.'); });
   document.querySelector('#hide-keys').addEventListener('click', () => { clearKeys(); dialog.close(); });
   document.querySelector('#copy-keys').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText('Public key (X.509 Base64):\n' + document.querySelector('#created-public-key').value + '\nPrivate key (PKCS#8 Base64) — KEEP SECRET:\n' + document.querySelector('#created-private-key').value); document.querySelector('#key-copy-status').textContent = 'Copied. Store the private key securely.'; }
@@ -132,7 +169,7 @@
     textarea.addEventListener('input', controls); textarea.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); void send(i); } });
     panel.querySelector('form').addEventListener('submit', event => { event.preventDefault(); void send(i); });
     panels.push({panel, textarea, log:panel.querySelector('.messages')}); document.querySelector('#chat-grid').append(panel);
-    selects[i].addEventListener('change', async () => { state.selected[i] = selects[i].value; textarea.value = ''; notice(panel.querySelector('.notice'), '', ''); await refresh(); });
+    selects[i].addEventListener('change', async () => { clearDemoKeys(); state.selected[i] = selects[i].value; textarea.value = ''; notice(panel.querySelector('.notice'), '', ''); await refresh(); });
   });
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
   document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', () => { document.querySelector('#chat-grid').className = 'chat-grid ' + (button.dataset.tab === '0' ? 'show-alice' : 'show-bob'); document.querySelectorAll('[data-tab]').forEach(tab => tab.setAttribute('aria-pressed', tab === button)); }));

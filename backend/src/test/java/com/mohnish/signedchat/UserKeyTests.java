@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @AutoConfigureMockMvc
 class UserKeyTests {
     @Autowired MockMvc mvc;
-    @Test void privateKeyOnlyAppearsInSuccessfulCreation() throws Exception {
+    @Test void ordinaryUserResponsesDoNotExposePrivateKeys() throws Exception {
         String creation = mvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"key-reveal-user\"}"))
             .andExpect(status().isCreated()).andExpect(header().string("Cache-Control", containsString("no-store")))
             .andExpect(jsonPath("$.privateKey", not(emptyOrNullString()))).andExpect(jsonPath("$.publicKey", not(emptyOrNullString())))
@@ -40,6 +40,25 @@ class UserKeyTests {
         mvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"key-reveal-user\"}"))
             .andExpect(status().isConflict()).andExpect(jsonPath("$.privateKey").doesNotExist());
     }
+    @Test void demoLookupReturnsTheExistingPairWithoutChangingTrust() throws Exception {
+        String creation = mvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Demo Key Owner\",\"trusted\":false}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String secret = JsonPath.read(creation, "$.privateKey");
+        String publicKey = JsonPath.read(creation, "$.publicKey");
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mvc.perform(get("/api/users/{username}/keys", "Demo Key Owner"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", containsString("no-store")))
+                .andExpect(jsonPath("$.name", is("Demo Key Owner")))
+                .andExpect(jsonPath("$.privateKey", is(secret)))
+                .andExpect(jsonPath("$.publicKey", is(publicKey)))
+                .andExpect(jsonPath("$.trusted", is(false)));
+        }
+        mvc.perform(get("/api/users/unknown-key-owner/keys"))
+            .andExpect(status().isNotFound()).andExpect(jsonPath("$.privateKey").doesNotExist());
+    }
+
     @Test void additionalUsersCanExchangeMessages() throws Exception {
         for (String name : new String[]{"Carol", "David", "Erin"}) {
             mvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"" + name + "\"}"))

@@ -5,6 +5,7 @@ import com.mohnish.signedchat.api.dto.CreatedUserResponse;
 import com.mohnish.signedchat.api.dto.ReceiveResponse;
 import com.mohnish.signedchat.api.dto.SignedMessageDto;
 import com.mohnish.signedchat.api.dto.UserResponse;
+import com.mohnish.signedchat.api.dto.UserKeysResponse;
 import com.mohnish.signedchat.model.ChatUser;
 import com.mohnish.signedchat.service.MessagingService;
 import com.mohnish.signedchat.service.UserService;
@@ -57,6 +58,13 @@ public class UserController {
     @GetMapping("/{name}")
     public UserResponse get(@PathVariable String name) {
         return UserResponse.of(users.get(name), users.isTrusted(name));
+    }
+
+    /** Demo lookup only: knowing a username is not authentication. */
+    @GetMapping("/{username}/keys")
+    public ResponseEntity<UserKeysResponse> keys(@PathVariable String username) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+            .body(UserKeysResponse.of(users.get(username), users.isTrusted(username)));
     }
 
     /** Verifies the signed message and, if valid, delivers it to the inbox. */
