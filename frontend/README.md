@@ -1,76 +1,65 @@
 # SignedChat frontend
 
-Plain HTML, CSS, and JavaScript. No React, TypeScript, npm, downloaded libraries, or build step. All browser assets are local.
+Plain HTML, CSS, and JavaScript. No frontend framework, npm installation, or build step is needed to run the website.
 
-## Run on Windows
+## Run
 
-1. From the repository root, start the [Java backend](../backend/README.md) in its own terminal:
+Start the backend from `backend/` with `.\mvnw.cmd spring-boot:run`. In a second terminal, run `.\start.cmd` from `frontend/`, then open http://127.0.0.1:5173.
 
-   ```powershell
-   cd backend
-   .\mvnw.cmd spring-boot:run
-   ```
+The launcher requires JDK 21+ and proxies API requests to port 8080. Run `.\start.cmd 5174 http://127.0.0.1:8080` to change the frontend port/backend address. On macOS/Linux, use `java tools/DevServer.java` from this directory. Keep both servers running; stop them with Ctrl+C.
 
-2. In a second terminal at the repository root, run:
+The production Dockerfile serves the six browser assets directly from Spring Boot. For manual Spring hosting, copy index.html, styles.css, api.js, app.js, math.js, and math-ui.js into backend/src/main/resources/static/. Tests and local development tools are not production assets.
 
-   ```powershell
-   cd frontend
-   .\start.cmd
-   ```
+## Screen flow
 
-3. Open **http://127.0.0.1:5173**. Keep both terminals running. Create users in Users & keys, then choose two users in Direct chats. Enter an existing username on that first page to show its demo key pair.
+1. **Home:** enter a username. The existing-user key lookup opens the Key Vault. Only a 404 routes to creation; network/server failures stay on Home with an error.
+2. **Create User:** create the new identity through the existing API, then open its Key Vault. A duplicate-creation conflict returns to Home so the existing identity can be opened.
+3. **Key Vault (Page 1):** shows username, Base64 X.509 public key, Base64 PKCS#8 private key, copy buttons, trust status, and Continue to Mail Workspace.
+4. **Mail workspace:** opens the selected identity's inbox. The header always offers Key Vault and Logout. Reopening the vault fetches keys again.
 
-The launcher uses JDK 21+, already required by the backend. It compiles the tiny development server in memory with Java's source launcher; no installation or package manager is involved. On macOS/Linux use `java tools/DevServer.java` from this directory. Stop with Ctrl+C.
+This is demo access by username, not authenticated login. The existing backend permits anyone who knows a username to retrieve its demo private key. Use classroom identities only.
 
-To change the frontend port or backend URL:
+Session identity and public state live only in memory. No keys or identity are persisted to localStorage/sessionStorage. Private keys are shown only in the vault fields, which clear when continuing or logging out. Logout also clears drafts, inbox/reader, recipient results, simulation state, and math output. Response guards prevent late requests from reopening old sessions or repopulating old messages. Logout does not delete server users or revoke keys; copied clipboard contents remain under the user's control. Reloading starts at Home.
 
-```powershell
-.\start.cmd 5174 http://127.0.0.1:8080
-```
+## Mail workspace
 
-The local server binds only to 127.0.0.1 and forwards `/api` requests to the backend. This avoids cross-origin issues without changing backend code. It is a development helper, not a production server.
+- **Inbox:** all messages received by the current demo user, regardless of sender. Search by sender/message; select an item to read it, inspect/copy its signed package, reply, or trace its payload.
+- **Compose / search:** filter registered recipients by username or Base64 public key. Sign and send as the current demo identity. Message content is transmitted exactly; whitespace-only submissions are disabled.
+- **User simulation:** select any two registered users and send from either side without switching the workspace identity. On narrow screens, switch between panels using tabs. Register more participants through the Home/create flow.
+- **Signing math:** the existing disposable-key Ed25519 trace, including complete scalar traces and native WebCrypto cross-check. Math generation/output is invalidated and cleared on logout.
 
-## Alternative: serve directly from Spring Boot
-
-Copy **index.html**, **styles.css**, **api.js**, **app.js**, **math.js**, and **math-ui.js** from `frontend/` into `backend/src/main/resources/static/`. Restart the backend and open **http://localhost:8080**. No separate frontend process is needed. Do not copy the Java development helper, Git metadata, or tests into the backend.
-
-Opening index.html by double-clicking lets you see the layout, but API calls require an HTTP server. Use either method above for working messaging.
+Acceptance badges reflect backend delivery verification, not independent browser authentication. The API has no message timestamps, unique IDs, read receipts, subjects, sent-mail folder, or WebSocket updates; the interface does not invent them. Refresh updates inbox/users/simulation explicitly. Inbox repeats remain visible because replay prevention is absent. User/public-key search is filtering fetched public records, not authenticating fingerprints. The six-experiment Attack Lab is a later implementation.
 
 ## Files
 
-- `index.html`: layout and reusable chat-panel template.
-- `styles.css`: responsive layout, styles, and accessibility helpers.
-- `app.js`: DOM events, user creation, chat rendering, and delivery feedback.
-- `api.js`: Fetch API requests, errors, and conversation reconciliation.
-- `tools/DevServer.java` and `start.cmd`: optional local static server and API proxy.
-- `tests.html` and `tests.js`: dependency-free browser tests.
+- index.html: Home, creation, vault, workspace views, and simulation template.
+- app.js: in-memory identity/session flow, async response guards, inbox, compose, simulation, key display/copy, logout.
+- styles.css: responsive dark developer/mail aesthetic.
+- api.js: established API calls, errors, exact request encoding, and conversation reconciliation.
+- math.js / math-ui.js: educational Ed25519 arithmetic and trace UI. Actual messaging uses Java cryptography.
+- tools/DevServer.java / start.cmd: optional Java development server.
+- tests.html / tests.js: dependency-free browser API tests.
+- flow.test.cjs: optional DOM regression tests for the multi-screen flow.
+- math.test.cjs: optional native Ed25519 test-vector checks.
 
-## Check
+## Verification
 
-Start the local server and open **http://127.0.0.1:5173/tests.html**. The test page checks request encoding, exact message content, rejected delivery, validation and network errors, message ordering, and duplicate messages using isolated responses. No backend is required for these checks.
+Open http://127.0.0.1:5173/tests.html to run browser API tests without a backend.
 
-For live verification: create Alice and Bob, send in both directions, expand **Inspect signature**, check creation and existing-user key display, hide the keys, and refresh the inboxes. On mobile, switch between Alice and Bob with the buttons above the chat. Enter sends; Shift+Enter adds a newline. Message content is transmitted exactly as entered; whitespace-only messages are disabled in the UI. Messages and signatures are rendered as text, including content containing HTML.
-
-## Current scope
-
-The interface matches backend commit fb0e479. Panels are demonstration identities, not authenticated sessions. Accepted badges reflect backend acceptance, not independent browser verification. Keys and inboxes are in memory and disappear on backend restart. Refresh to synchronize after restart. Messages are plaintext; encryption, replay protection, and fingerprint validation are not claimed. The old backend has no timestamps, so the interface preserves observed message order during use but cannot reconstruct historical interleaving across separate inboxes after reload. External messages are fetched with **Refresh inboxes**; there is no polling. Authentication and the Security Lab can be connected when the updated backend is available.
-
-## Multiple users and demo key display
-
-Open **Users & keys** to create any number of named demo users. Select two users in **Conversations** to exchange signed messages. The user selector is not login or authentication.
-
-A successful `POST /api/users` returns both keys with `Cache-Control: no-store`. The public key is Base64 X.509; the private key is Base64 PKCS#8. Closing or cancelling the creation dialog clears both fields. On Page 1 (**Direct chats**), enter an exact existing username to show the pair again using `api.getUserKeys(name)`, backed by `GET /api/users/{username}/keys`. The returned demo identity is selected on the left. This is not authenticated login: anyone who knows the username can retrieve its private key. Hide keys, change the username/selected identity, or leave the tab to clear the display. Secrets are not saved in browser storage or the shared user list. Ordinary user list and lookup endpoints remain public-only. Recreating a user after a server restart generates a new pair.
-
-## Signing math
-
-The **Signing math** tab creates a separate disposable key and does not use chat private keys. It shows exact UTF-8/Base64 payload bytes, SHA-512 inputs and outputs, secret scalar clamping, curve parameters, public key derivation, nonce, challenge, signature scalar, complete signature, and the public verification equation. Expand all 256 rounds for each scalar multiplication. Native browser Web Crypto signs/verifies independently and must match the educational reference arithmetic exactly. Actual chat signing continues to use Java JCA, not this explanatory implementation. SHA-512 compression internals and cryptographic provider machine instructions are not instrumented.
-
-Additional browser assets: `math.js` and `math-ui.js`. Include both when copying the frontend into Spring Boot's static resources. The Dockerfile and local launcher already serve them.
-
-Optional developer checks (Node is only needed for this command, not to run the app):
+Optional developer-only tests use Node. Math tests need no third-party package:
 
 ```powershell
-node --test math.test.cjs
+node --test frontend/math.test.cjs
 ```
 
-These checks cover two RFC 8032 test vectors, complete scalar traces, independent native Ed25519 verification, tampering, and exact UTF-8 payload encoding.
+Flow tests additionally use jsdom as a test-only dependency. From the repository root:
+
+```powershell
+npm.cmd install --prefix ../signedchat-test-tools --no-save jsdom
+$env:NODE_PATH = (Resolve-Path ../signedchat-test-tools/node_modules).Path
+node --test frontend/flow.test.cjs frontend/math.test.cjs
+```
+
+These cover existing/new users, 404 versus network errors, duplicate creation, copyable key fields, all-sender inbox/search, exact-content sending, logout/session separation, and late key/inbox/math results after logout. Test fixtures contain synthetic keys; no real private keys are logged.
+
+For manual checks: create two identities; inspect the vault and continue; send between them; refresh/reopen the receiving identity's inbox; inspect the signature; run simulation/math; log out and confirm Home and cleared fields. Backend restarts reset users, keys, and inboxes.

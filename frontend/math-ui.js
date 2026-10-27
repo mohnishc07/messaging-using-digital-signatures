@@ -2,6 +2,11 @@
   'use strict';
   const {traceSignature, payload, hex} = window.SignedChatMath;
   const output = document.querySelector('#math-output'), status = document.querySelector('#math-status'), button = document.querySelector('#run-math');
+  let generation = 0;
+  window.addEventListener('signedchat:logout', () => {
+    generation++; output.replaceChildren(); status.textContent = ''; button.disabled = false;
+    document.querySelector('#math-form').reset();
+  });
   function el(tag, cls, text) { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; }
   function step(title, explanation, fields) {
     const section = el('section', 'surface math-step'); section.append(el('h2', '', title), el('p', '', explanation));
@@ -10,12 +15,14 @@
     section.append(list); output.append(section); return section;
   }
   document.querySelector('#math-form').addEventListener('submit', async event => {
-    event.preventDefault(); button.disabled = true; output.replaceChildren(); status.textContent = 'Computing the trace and checking it against native Ed25519…';
+    event.preventDefault(); const run = ++generation; button.disabled = true; output.replaceChildren(); status.textContent = 'Computing the trace and checking it against native Ed25519…';
     try {
       await new Promise(resolve => requestAnimationFrame(resolve));
+      if (run !== generation) return;
       const sender = document.querySelector('#math-sender').value, recipient = document.querySelector('#math-recipient').value, content = document.querySelector('#math-message').value;
       const encodedPayload = payload(sender, recipient, content), bytes = new TextEncoder().encode(encodedPayload);
       const seed = crypto.getRandomValues(new Uint8Array(32)), trace = await traceSignature(seed, bytes);
+      if (run !== generation) return;
       step('1. Exact bytes to be signed', 'This is the same UTF-8 / Base64 payload format used by the Java backend. The message is not trimmed or encrypted.', [
         ['Sender', sender], ['Recipient', recipient], ['Original message', content], ['Message UTF-8 hex', hex(new TextEncoder().encode(content))],
         ['M = Base64(sender) : Base64(recipient) : Base64(content)', encodedPayload], ['M as UTF-8 hex', trace.message], ['M length in bytes', bytes.length]
@@ -54,7 +61,7 @@
       }
       const reference = el('p', 'hint', 'Ed25519 algorithm: '), link = el('a', '', 'RFC 8032, section 5.1'); link.href = 'https://www.rfc-editor.org/rfc/rfc8032.html#section-5.1'; link.target = '_blank'; link.rel = 'noopener noreferrer'; reference.append(link); output.append(reference);
       status.textContent = 'Signature matched native Ed25519. Verification passed. All values below belong to a disposable example key.';
-    } catch (error) { status.textContent = 'Could not compute the trace: ' + error.message + ' Use a current browser on HTTPS or localhost with Ed25519 Web Crypto support.'; }
-    finally { button.disabled = false; }
+    } catch (error) { if (run === generation) status.textContent = 'Could not compute the trace: ' + error.message + ' Use a current browser on HTTPS or localhost with Ed25519 Web Crypto support.'; }
+    finally { if (run === generation) button.disabled = false; }
   });
 })();

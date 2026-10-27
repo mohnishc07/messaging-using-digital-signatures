@@ -58,7 +58,7 @@ Creation response: `{ "name": "Alice", "publicKey": "<base64 X.509 key>", "priva
 
 Creation and `GET /api/users/{username}/keys` return both keys with `Cache-Control: no-store`. The latter returns the existing pair, not a newly generated one, with the same response fields; unknown users return 404. Ordinary user list and lookup responses remain public-only. The server retains keys for signing.
 
-The key lookup is deliberately unauthenticated for this classroom demo: anyone who knows a registered username can retrieve its private key. It does not prove user ownership and must not hold real secrets. On Page 1 (**Direct chats**), enter an existing username to select it on the left and display both keys. Hide keys to clear them from the displayed fields. The creation dialog also clears when closed, but demo keys can be retrieved again.
+The key lookup is deliberately unauthenticated for this classroom demo: anyone who knows a registered username can retrieve its private key. It does not prove user ownership and must not hold real secrets. Enter a username on Home to open the dedicated Key Vault (Page 1), or create a new identity if none exists. Continue to the mail workspace or log out to clear the displayed keys. Demo keys can be retrieved again through the header's Key Vault action.
 
 ### `POST /api/messages/sign`
 

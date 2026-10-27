@@ -40,7 +40,7 @@ cd frontend
 .\start.cmd
 ```
 
-Open **http://127.0.0.1:5173**. Create users in **Users & keys**, then select any two users in **Direct chats**. On that first page, enter an existing demo username to display both its public and private keys. This username lookup is not authentication; demo keys are accessible to anyone who knows the name. **Signing math** traces Ed25519 with disposable example keys. Keep both terminals running.
+Open **http://127.0.0.1:5173**. Enter a username on **Home**: existing identities open the **Key Vault (Page 1)**; new usernames go through **Create User** first. Inspect/copy the keys, then continue to the mail workspace for Inbox, Compose/search, user simulation, and Signing math. **Logout** clears the in-memory session and returns Home. This username flow is not authentication; demo keys are accessible to anyone who knows the name. Keep both terminals running.
 
 On macOS / Linux, run `cd frontend` and `java tools/DevServer.java`.
 
