@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,25 +8,56 @@ import { Empty, MessageDetails, Timestamp } from "./message-details";
 import { MathLab } from "./math-lab";
 import { Simulation } from "./simulation";
 
-type View = "inbox" | "compose" | "simulation" | "math";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
+import CommandPalette from "@/components/kokonutui/action-search-bar";
+import { StatusIsland } from "@/components/kokonutui/status-island";
+import { AttackLab } from "./attack-lab";
+const subscribeWidth = (change: () => void) => {
+  window.addEventListener("resize", change);
+  return () => window.removeEventListener("resize", change);
+};
+const isNarrow = () => window.innerWidth < 760;
+type View = "inbox" | "compose" | "simulation" | "math" | "attacks";
 const titles: Record<View, string> = {
   inbox: "Inbox",
   compose: "Compose / search",
-  simulation: "User simulation",
+  simulation: "Alice ⇄ Bob simulation",
   math: "Signing math",
+  attacks: "Attack Lab",
 };
-export function MailWorkspace({ user, api }: { user: User; api: Api }) {
+export function MailWorkspace({
+  user,
+  api,
+  onLogout,
+  onVault,
+  vaultBusy,
+}: {
+  user: User;
+  api: Api;
+  onLogout: () => void;
+  onVault: () => void;
+  vaultBusy: boolean;
+}) {
+  const narrow = useSyncExternalStore(subscribeWidth, isNarrow, () => false);
   const [view, setView] = useState<View>("inbox"),
     [users, setUsers] = useState<User[]>([]),
     [inbox, setInbox] = useState<SignedMessage[]>([]);
-  const [query, setQuery] = useState(""),
-    [directoryQuery, setDirectoryQuery] = useState(""),
+  const [directoryQuery, setDirectoryQuery] = useState(""),
     [inboxQuery, setInboxQuery] = useState(""),
     [index, setIndex] = useState<number | null>(null);
   const [recipient, setRecipient] = useState(""),
     [draft, setDraft] = useState(""),
     [notice, setNotice] = useState(""),
-    [connected, setConnected] = useState(false);
+    [connection, setConnection] = useState<"checking" | "connected" | "error">(
+      "checking",
+    );
   const [mathInput, setMathInput] = useState<{
       sender: string;
       recipient: string;
@@ -43,7 +74,7 @@ export function MailWorkspace({ user, api }: { user: User; api: Api }) {
       if (current()) {
         setUsers(publicUsers.sort((a, b) => a.name.localeCompare(b.name)));
         setInbox(messages);
-        setConnected(true);
+        setConnection("connected");
       }
     },
     [api, user.name],
@@ -51,7 +82,7 @@ export function MailWorkspace({ user, api }: { user: User; api: Api }) {
   const refresh = useCallback(() => {
     setNotice("");
     void run(load, (error) => {
-      setConnected(false);
+      setConnection("error");
       setNotice(errorMessage(error));
     });
   }, [load, run]);
@@ -78,7 +109,6 @@ export function MailWorkspace({ user, api }: { user: User; api: Api }) {
     message = index === null ? undefined : inbox[index];
   const choose = (entry: User) => {
     setRecipient(entry.name);
-    setQuery("");
     setView("compose");
     setNotice("");
     setCopyNotice("");
@@ -114,313 +144,410 @@ export function MailWorkspace({ user, api }: { user: User; api: Api }) {
     </>
   );
   return (
-    <div className="workspace">
-      <aside className="mail-sidebar">
-        <div className="sidebar-label">MAIL WORKSPACE</div>
-        <Button className="mb-6 w-full" onClick={() => setView("compose")}>
-          ＋ Compose message
-        </Button>
-        <nav className="dashboard-nav" aria-label="Mail navigation">
-          {(Object.keys(titles) as View[]).map((name) => (
-            <button
-              key={name}
-              aria-pressed={view === name}
-              className={view === name ? "nav-current" : ""}
-              onClick={() => setView(name)}
-            >
-              {titles[name]}
-              {name === "inbox" && (
-                <span className="count">{inbox.length}</span>
-              )}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-bottom">
-          Ed25519 · signed mail
-          <p>
-            Backend verifies delivery.
-            <br />
-            Messages are not encrypted.
-          </p>
-        </div>
-      </aside>
-      <main className="mail-main">
-        <div className="workspace-toolbar">
+    <Tabs
+      orientation="vertical"
+      value={view}
+      onValueChange={(value) => setView(value as View)}
+      className="mail-shell"
+    >
+      <header className="mail-workspace-header">
+        <div className="workspace-brand">
+          <span className="brand-mark">S</span>
           <div>
-            <span className="eyebrow">
-              SIGNEDCHAT / {titles[view].toUpperCase()}
-            </span>
-            <h1>{titles[view]}</h1>
-          </div>
-          <div className="workspace-user-search">
-            <label className="sr-only" htmlFor="workspace-user-search">
-              Find users by username or public key
-            </label>
-            <Input
-              id="workspace-user-search"
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") setQuery("");
-              }}
-              placeholder="Find people by username or public key…"
-            />
-            {query.trim() && (
-              <div className="workspace-user-results">{directory(query)}</div>
-            )}
-          </div>
-          <div className="toolbar-actions">
-            <span
-              className={"connection-status " + (connected ? "connected" : "")}
-            >
-              {connected ? "Backend connected" : "Not refreshed"}
-            </span>
-            <Button variant="outline" disabled={busy} onClick={refresh}>
-              ↻ Refresh
-            </Button>
+            <strong>SignedChat</strong>
+            <span>@{user.name}</span>
           </div>
         </div>
-        {notice && (
-          <p className="notice workspace-notice" role="status">
-            {notice}
-          </p>
-        )}
-        {view === "inbox" && (
-          <section className="inbox-layout" aria-label="Inbox">
-            <div className="mail-list-column">
-              <div className="list-toolbar">
-                <label className="sr-only" htmlFor="inbox-search">
-                  Search inbox
-                </label>
-                <Input
-                  id="inbox-search"
-                  type="search"
-                  value={inboxQuery}
-                  onChange={(event) => setInboxQuery(event.target.value)}
-                  placeholder="Search sender or message…"
-                />
-                <span>{inbox.length} received messages</span>
-              </div>
-              <div className="mail-list" role="list">
-                {inbox
-                  .map((entry, i) => ({ entry, i }))
-                  .filter(({ entry }) =>
-                    (entry.senderId + "\n" + entry.message)
-                      .toLocaleLowerCase()
-                      .includes(inboxQuery.toLocaleLowerCase()),
-                  )
-                  .map(({ entry, i }) => (
-                    <div role="listitem" key={i}>
-                      <button
-                        className={
-                          "mail-row " + (index === i ? "selected" : "")
-                        }
-                        aria-pressed={index === i}
-                        onClick={() => setIndex(i)}
-                      >
-                        <strong>{entry.senderId}</strong>
-                        <p>{entry.message}</p>
-                        <span>✓ Accepted by backend</span>
-                      </button>
-                    </div>
-                  ))}
-                {!inbox.length && (
-                  <Empty
-                    title="Your inbox is empty"
-                    text="Received messages from every sender will appear here."
-                  />
+        <CommandPalette
+          className="workspace-command"
+          label="Find users by username or public key"
+          placeholder="Search username or public key…"
+          shortcut
+          items={users.map((entry) => ({
+            id: entry.name,
+            label: entry.name,
+            group: "Registered identities",
+            keywords: [entry.publicKey],
+          }))}
+          onSelect={(item) => {
+            const entry = users.find((candidate) => candidate.name === item.id);
+            if (entry) choose(entry);
+          }}
+        />
+        <StatusIsland
+          className="backend-island"
+          tasks={[
+            {
+              id: "backend",
+              label:
+                busy || connection === "checking"
+                  ? "Contacting backend"
+                  : connection === "connected"
+                    ? "Backend connected"
+                    : "Backend request failed",
+              status:
+                busy || connection === "checking"
+                  ? "running"
+                  : connection === "connected"
+                    ? "done"
+                    : "error",
+              action: { label: "Refresh", onClick: refresh },
+            },
+          ]}
+        />
+        <div className="header-actions">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onVault}
+            disabled={vaultBusy}
+          >
+            Key vault
+          </Button>
+          <Button variant="outline" size="sm" onClick={onLogout}>
+            Logout ↗
+          </Button>
+        </div>
+      </header>
+      <div className="workspace">
+        <aside className="mail-sidebar">
+          <div className="sidebar-label">MAIL WORKSPACE</div>
+          <Button className="mb-6 w-full" onClick={() => setView("compose")}>
+            ＋ Compose message
+          </Button>
+          <TabsList
+            className="dashboard-nav workspace-tab-list"
+            aria-label="Mail navigation"
+            variant="line"
+          >
+            {(Object.keys(titles) as View[]).map((name) => (
+              <TabsTrigger
+                key={name}
+                value={name}
+                className={view === name ? "nav-current" : ""}
+              >
+                {titles[name]}
+                {name === "inbox" && (
+                  <span className="count">{inbox.length}</span>
                 )}
-              </div>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <div className="sidebar-bottom">
+            Ed25519 · signed mail
+            <p>
+              Backend verifies delivery.
+              <br />
+              Messages are not encrypted.
+            </p>
+          </div>
+        </aside>
+        <main className="mail-main">
+          <div className="workspace-toolbar">
+            <div>
+              <span className="eyebrow">
+                SIGNEDCHAT / {titles[view].toUpperCase()}
+              </span>
+              <h1>{titles[view]}</h1>
             </div>
-            <article className="mail-reader" aria-label="Selected message">
-              {message ? (
-                <>
-                  <div className="reader-title">
-                    <h2>Signed message</h2>
-                    <span className="verification-pill">
-                      ✓ Backend accepted
-                    </span>
-                  </div>
-                  <div className="reader-meta">
-                    <p>
-                      <b>FROM</b>
-                      {message.senderId}
-                    </p>
-                    <p>
-                      <b>TO</b>
-                      {message.receiverId}
-                    </p>
-                    <p>
-                      <b>TIME</b>
-                      <Timestamp message={message} />
-                    </p>
-                  </div>
-                  <div className="message-body">{message.message}</div>
-                  <MessageDetails message={message} onTrace={trace} />
-                  <Button
-                    className="mt-6"
-                    variant="outline"
-                    onClick={() => {
-                      const sender = users.find(
-                        (entry) => entry.name === message.senderId,
-                      );
-                      if (sender) {
-                        setDraft("");
-                        choose(sender);
+            <div className="toolbar-actions">
+              <Button variant="outline" disabled={busy} onClick={refresh}>
+                ↻ Refresh
+              </Button>
+            </div>
+          </div>
+          {notice && (
+            <p className="notice workspace-notice" role="status">
+              {notice}
+            </p>
+          )}
+          {view === "inbox" && (
+            <TabsContent value="inbox">
+              <section className="inbox-region" aria-label="Inbox">
+                <ResizablePanelGroup
+                  key={narrow ? "stacked" : "side-by-side"}
+                  orientation={narrow ? "vertical" : "horizontal"}
+                  className="inbox-panel-group"
+                >
+                  <ResizablePanel
+                    id="message-list"
+                    defaultSize="35%"
+                    minSize={narrow ? "25%" : "22%"}
+                  >
+                    <div className="mail-list-column">
+                      <div className="list-toolbar">
+                        <label className="sr-only" htmlFor="inbox-search">
+                          Search inbox
+                        </label>
+                        <Input
+                          id="inbox-search"
+                          type="search"
+                          value={inboxQuery}
+                          onChange={(event) =>
+                            setInboxQuery(event.target.value)
+                          }
+                          placeholder="Search sender or message…"
+                        />
+                        <span>{inbox.length} received messages</span>
+                      </div>
+                      <ScrollArea className="mail-list-scroll">
+                        <div className="mail-list" role="list">
+                          {inbox
+                            .map((entry, i) => ({ entry, i }))
+                            .filter(({ entry }) =>
+                              (entry.senderId + "\n" + entry.message)
+                                .toLocaleLowerCase()
+                                .includes(inboxQuery.toLocaleLowerCase()),
+                            )
+                            .map(({ entry, i }) => (
+                              <div role="listitem" key={i}>
+                                <button
+                                  className={
+                                    "mail-row " +
+                                    (index === i ? "selected" : "")
+                                  }
+                                  aria-pressed={index === i}
+                                  onClick={() => setIndex(i)}
+                                >
+                                  <strong>{entry.senderId}</strong>
+                                  <p>{entry.message}</p>
+                                  <span>✓ Accepted by backend</span>
+                                </button>
+                              </div>
+                            ))}
+                          {!inbox.length && (
+                            <Empty
+                              title="Your inbox is empty"
+                              text="Received messages from every sender will appear here."
+                            />
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </ResizablePanel>
+                  <ResizableHandle withHandle aria-label="Resize inbox panes" />
+                  <ResizablePanel
+                    id="reading-pane"
+                    minSize={narrow ? "30%" : "35%"}
+                  >
+                    <ScrollArea className="reader-scroll">
+                      <article
+                        className="mail-reader"
+                        aria-label="Selected message"
+                      >
+                        {message ? (
+                          <>
+                            <div className="reader-title">
+                              <h2>Signed message</h2>
+                              <Badge variant="secondary">
+                                ✓ Backend accepted
+                              </Badge>
+                            </div>
+                            <div className="reader-meta">
+                              <p>
+                                <b>FROM</b>
+                                {message.senderId}
+                              </p>
+                              <p>
+                                <b>TO</b>
+                                {message.receiverId}
+                              </p>
+                              <p>
+                                <b>TIME</b>
+                                <Timestamp message={message} />
+                              </p>
+                            </div>
+                            <div className="message-body">
+                              {message.message}
+                            </div>
+                            <MessageDetails message={message} onTrace={trace} />
+                            <Button
+                              className="mt-6"
+                              variant="outline"
+                              onClick={() => {
+                                const sender = users.find(
+                                  (entry) => entry.name === message.senderId,
+                                );
+                                if (sender) {
+                                  setDraft("");
+                                  choose(sender);
+                                }
+                              }}
+                            >
+                              Reply →
+                            </Button>
+                          </>
+                        ) : (
+                          <Empty
+                            title="Select a signed message"
+                            text="Read its content and inspect its Ed25519 signature."
+                          />
+                        )}
+                      </article>
+                    </ScrollArea>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              </section>
+            </TabsContent>
+          )}
+          {view === "compose" && (
+            <TabsContent value="compose">
+              <section className="padded-view">
+                <div className="section-intro">
+                  <h2>A message with your signature.</h2>
+                  <p>
+                    Find recipients by username or public key. The server signs
+                    as your current demo identity.
+                  </p>
+                </div>
+                <div className="compose-layout">
+                  <section className="surface recipient-directory">
+                    <label htmlFor="recipient-search">Find a recipient</label>
+                    <Input
+                      id="recipient-search"
+                      type="search"
+                      value={directoryQuery}
+                      onChange={(event) =>
+                        setDirectoryQuery(event.target.value)
                       }
+                      placeholder="Username or public key…"
+                    />
+                    <div className="recipient-results">
+                      {directory(directoryQuery)}
+                    </div>
+                  </section>
+                  <form
+                    className="surface compose-form"
+                    aria-label="Compose signed message"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (!selected || !draft.trim()) return;
+                      setNotice("");
+                      void run(
+                        async (current) => {
+                          const result = await api.send({
+                            sender: user.name,
+                            recipient: selected.name,
+                            content: draft,
+                          });
+                          if (!current()) return;
+                          setConnection("connected");
+                          if (!result.delivered) {
+                            setNotice(
+                              "The backend rejected this message. It was not delivered.",
+                            );
+                            return;
+                          }
+                          setDraft("");
+                          setNotice(
+                            "Signed and delivered to " + selected.name + ".",
+                          );
+                          try {
+                            await load(current);
+                          } catch {
+                            if (current()) {
+                              setConnection("error");
+                              setNotice(
+                                "Delivered. Refresh to synchronize your inbox.",
+                              );
+                            }
+                          }
+                        },
+                        (error) => {
+                          setConnection("error");
+                          setNotice(errorMessage(error));
+                        },
+                      );
                     }}
                   >
-                    Reply →
-                  </Button>
-                </>
-              ) : (
-                <Empty
-                  title="Select a signed message"
-                  text="Read its content and inspect its Ed25519 signature."
-                />
-              )}
-            </article>
-          </section>
-        )}
-        {view === "compose" && (
-          <section className="padded-view">
-            <div className="section-intro">
-              <h2>A message with your signature.</h2>
-              <p>
-                Find recipients by username or public key. The server signs as
-                your current demo identity.
-              </p>
-            </div>
-            <div className="compose-layout">
-              <section className="surface recipient-directory">
-                <label htmlFor="recipient-search">Find a recipient</label>
-                <Input
-                  id="recipient-search"
-                  type="search"
-                  value={directoryQuery}
-                  onChange={(event) => setDirectoryQuery(event.target.value)}
-                  placeholder="Username or public key…"
-                />
-                <div className="recipient-results">
-                  {directory(directoryQuery)}
-                </div>
-              </section>
-              <form
-                className="surface compose-form"
-                aria-label="Compose signed message"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!selected || !draft.trim()) return;
-                  setNotice("");
-                  void run(
-                    async (current) => {
-                      const result = await api.send({
-                        sender: user.name,
-                        recipient: selected.name,
-                        content: draft,
-                      });
-                      if (!current()) return;
-                      if (!result.delivered) {
-                        setNotice(
-                          "The backend rejected this message. It was not delivered.",
-                        );
-                        return;
-                      }
-                      setDraft("");
-                      setNotice(
-                        "Signed and delivered to " + selected.name + ".",
-                      );
-                      try {
-                        await load(current);
-                      } catch {
-                        if (current())
-                          setNotice(
-                            "Delivered. Refresh to synchronize your inbox.",
-                          );
-                      }
-                    },
-                    (error) => setNotice(errorMessage(error)),
-                  );
-                }}
-              >
-                <h2>
-                  {selected
-                    ? "Message to " + selected.name
-                    : "New signed message"}
-                </h2>
-                <div className="compose-meta">
-                  <span>FROM</span>
-                  <strong>{user.name}</strong>
-                </div>
-                <div className="compose-meta">
-                  <span>TO</span>
-                  <strong>{selected?.name || "Select a recipient"}</strong>
-                </div>
-                {selected && (
-                  <section
-                    className="recipient-key"
-                    aria-label="Recipient public key"
-                  >
-                    <div className="recipient-key-heading">
-                      <span>PUBLIC KEY · X.509 / BASE64</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(
-                              selected.publicKey,
-                            );
-                            setCopyNotice("Copied public key");
-                          } catch {
-                            setCopyNotice("Copy unavailable");
-                          }
-                        }}
+                    <h2>
+                      {selected
+                        ? "Message to " + selected.name
+                        : "New signed message"}
+                    </h2>
+                    <div className="compose-meta">
+                      <span>FROM</span>
+                      <strong>{user.name}</strong>
+                    </div>
+                    <div className="compose-meta">
+                      <span>TO</span>
+                      <strong>{selected?.name || "Select a recipient"}</strong>
+                    </div>
+                    {selected && (
+                      <section
+                        className="recipient-key"
+                        aria-label="Recipient public key"
                       >
-                        Copy public key
+                        <div className="recipient-key-heading">
+                          <span>PUBLIC KEY · X.509 / BASE64</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(
+                                  selected.publicKey,
+                                );
+                                setCopyNotice("Copied public key");
+                              } catch {
+                                setCopyNotice("Copy unavailable");
+                              }
+                            }}
+                          >
+                            Copy public key
+                          </Button>
+                        </div>
+                        <code>{selected.publicKey}</code>
+                        <span role="status">{copyNotice}</span>
+                      </section>
+                    )}
+                    <label htmlFor="compose-content">Message</label>
+                    <Textarea
+                      id="compose-content"
+                      rows={10}
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      disabled={busy}
+                      placeholder="Write your message…"
+                      required
+                    />
+                    <div className="compose-bottom">
+                      <span>Ed25519 · signed by the backend</span>
+                      <Button
+                        type="submit"
+                        disabled={busy || !selected || !draft.trim()}
+                      >
+                        Sign & Send →
                       </Button>
                     </div>
-                    <code>{selected.publicKey}</code>
-                    <span role="status">{copyNotice}</span>
-                  </section>
-                )}
-                <label htmlFor="compose-content">Message</label>
-                <Textarea
-                  id="compose-content"
-                  rows={10}
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  disabled={busy}
-                  placeholder="Write your message…"
-                  required
-                />
-                <div className="compose-bottom">
-                  <span>Ed25519 · signed by the backend</span>
-                  <Button
-                    type="submit"
-                    disabled={busy || !selected || !draft.trim()}
-                  >
-                    Sign & Send →
-                  </Button>
+                  </form>
                 </div>
-              </form>
-            </div>
-          </section>
-        )}
-        {view === "simulation" && (
-          <Simulation
-            api={api}
-            users={users}
-            onTrace={trace}
-            onDelivered={refresh}
-          />
-        )}
-        {view === "math" && (
-          <MathLab key={JSON.stringify(mathInput)} initial={mathInput} />
-        )}
-      </main>
-    </div>
+              </section>
+            </TabsContent>
+          )}
+          {view === "simulation" && (
+            <TabsContent value="simulation">
+              <Simulation
+                api={api}
+                users={users}
+                onTrace={trace}
+                onDelivered={refresh}
+              />
+            </TabsContent>
+          )}
+          {view === "math" && (
+            <TabsContent value="math">
+              <MathLab key={JSON.stringify(mathInput)} initial={mathInput} />
+            </TabsContent>
+          )}
+          {view === "attacks" && (
+            <TabsContent value="attacks">
+              <AttackLab api={api} />
+            </TabsContent>
+          )}
+        </main>
+      </div>
+    </Tabs>
   );
 }

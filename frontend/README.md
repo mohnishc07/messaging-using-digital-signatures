@@ -93,4 +93,23 @@ This is demo identity selection, not authenticated login. The backend deliberate
 
 Inbox includes every received sender, with backend-acceptance badges and expandable signatures. The current API has no timestamps, so the reading pane says **Not provided by server**. If a valid server `timestamp` is provided later, it is displayed rather than fabricated.
 
-User/public-key search filters fetched public records; it does not authenticate fingerprints. Messages remain plaintext, replay defense is absent, and the Attack Lab is a later implementation. The math lab uses disposable keys and native WebCrypto cross-checks; real chat signing stays in Java JCA.
+User/public-key search filters fetched public records; it does not authenticate fingerprints. Messages remain plaintext and replay defense is absent. The math lab uses disposable keys and native WebCrypto cross-checks; real chat signing stays in Java JCA.
+
+## Mail workspace and attack lab
+
+The workspace loads separately from the identity screens. Its sticky header includes Kokonut's Command Palette (official registry name `action-search-bar`), a `status-island` reflecting the most recent workspace API request, Key Vault, and Logout. Search a username or full public key, choose a result with the mouse or keyboard, and Compose opens with the full X.509 Ed25519 public key. Ctrl+K / Cmd+K opens search.
+
+shadcn Tabs select Inbox, Compose, Alice ⇄ Bob simulation, Signing Math, and Attack Lab. Inbox uses resizable, independently scrollable panes; they stack vertically below 760px. Drag the divider or focus it and use arrow keys. Collapsible signature details open an adapted Kokonut `smooth-drawer` with the original signature, exact signed payload, and JSON. A stored acceptance badge describes delivery-time verification; opening the drawer does not reverify or redeliver the package.
+
+Attack Lab has six `hold-button` actions. Hold the pointer or Enter/Space for 900ms; a short click does nothing. Each experiment verifies its baseline with native Ed25519, then records the actual API response. First use creates three uniquely named lab users: trusted sender/receiver and untrusted attacker. They remain in the backend directory until restart; deliveries affect only the lab receiver. Evidence excludes private keys. Network errors produce an error rather than a false defense result. Logout or leaving the tab discards the experiment state and stops follow-up requests.
+
+| Experiment | Operation | Observed with the local Java backend, 28 October 2026 |
+| --- | --- | --- |
+| Message tampering | Change content; retain signature | Rejected |
+| Signature tampering | Flip one bit in the 64-byte signature | Rejected |
+| Wrong-key impersonation | Sign the claimed sender's exact payload using Mallory's key | Verifies with Mallory's key; rejected under claimed sender's key |
+| Untrusted sender | Submit a valid signature from an identity outside the trusted store | Rejected |
+| Replay | Submit identical signed JSON twice | Both accepted; matching inbox count increased by 2 |
+| Plaintext visibility | Read the signed API response | Message remains readable in application JSON |
+
+The replay card shows matching counts before and after each run, so repeated experiments remain measurable. Plaintext visibility is an application-data demonstration: HTTPS still protects transport. Suggested defenses accompany each result. This lab demonstrates limitations; it does not add authentication, encryption, replay prevention, or public-key-substitution defenses to the backend.

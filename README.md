@@ -27,7 +27,7 @@ npm.cmd run dev
 
 Open http://127.0.0.1:5173. Vite proxies API requests to http://127.0.0.1:8080. Use `npm.cmd` on Windows if PowerShell blocks npm.ps1. On macOS/Linux, use `./mvnw` and `npm` instead.
 
-Enter a username on Home. Existing users open the Key Vault; unknown names go through creation first. Inspect/copy the demo keys, then continue to Inbox, Compose/public-key search, user simulation, or signing math. Logout clears the in-memory identity and React workspace state.
+Enter a username on Home. Existing users open the Key Vault; unknown names go through creation first. Inspect/copy the demo keys, then continue to the resizable Inbox, Compose/public-key search, user simulation, signing math, or the six-experiment Attack Lab. Logout clears the in-memory identity and React workspace state.
 
 The username flow is not authentication. The backend deliberately allows retrieving demo private keys by username; use classroom keys only.
 

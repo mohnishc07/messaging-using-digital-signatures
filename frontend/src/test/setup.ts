@@ -17,6 +17,25 @@ vi.stubGlobal(
     disconnect() {}
   },
 );
+vi.stubGlobal(
+  "IntersectionObserver",
+  class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  },
+);
+if (typeof Element !== "undefined") {
+  Element.prototype.animate = (() => ({
+    finished: Promise.resolve(),
+    cancel() {},
+    play() {},
+    pause() {},
+    finish() {},
+    addEventListener() {},
+    removeEventListener() {},
+  })) as unknown as typeof Element.prototype.animate;
+}
 if (typeof window !== "undefined")
   Object.defineProperty(window, "matchMedia", {
     writable: true,

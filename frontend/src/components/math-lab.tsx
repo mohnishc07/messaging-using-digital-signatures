@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +17,7 @@ function Step({
   fields: [string, unknown][];
 }) {
   return (
-    <section className="surface math-step">
+    <Card className="surface math-step">
       <h2>{title}</h2>
       <p>{description}</p>
       <dl>
@@ -31,7 +32,7 @@ function Step({
           </div>
         ))}
       </dl>
-    </section>
+    </Card>
   );
 }
 function Rounds({ trace }: { trace: SignatureTrace }) {
@@ -242,7 +243,7 @@ export function MathLab({
               ["Native verification", trace.nativeVerified],
             ]}
           />
-          <section className="surface math-step">
+          <Card className="surface math-step">
             <h2>9. Every scalar-multiplication round</h2>
             <p>
               256 little-endian bits: conditionally add, then double. Extended
@@ -263,7 +264,7 @@ export function MathLab({
                 RFC 8032, section 5.1
               </a>
             </p>
-          </section>
+          </Card>
         </>
       )}
     </section>

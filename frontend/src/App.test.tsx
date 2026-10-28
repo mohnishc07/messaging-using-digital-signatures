@@ -47,7 +47,8 @@ async function mail() {
   fireEvent.click(
     screen.getByRole("button", { name: "Continue to Mail Workspace →" }),
   );
-  await screen.findByText("Backend connected");
+  // First entry also imports the separately bundled workspace and its UI dependencies.
+  await screen.findAllByText("Backend connected", {}, { timeout: 5000 });
 }
 beforeEach(() => {
   vi.clearAllMocks();
@@ -192,6 +193,11 @@ describe("React identity and mail flow", () => {
     expect(
       within(reader).getByText("Not provided by server"),
     ).toBeInTheDocument();
+    fireEvent.click(
+      within(reader).getByRole("button", {
+        name: "Inspect Ed25519 signature & signed package",
+      }),
+    );
     expect(within(reader).getByText("example-signature")).toBeInTheDocument();
     expect(within(reader).getByText("✓ Backend accepted")).toBeInTheDocument();
   });
@@ -202,7 +208,7 @@ describe("React identity and mail flow", () => {
       screen.getByLabelText("Find users by username or public key"),
       { target: { value: "public-Bob" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: /Bob.*public-Bob/ }));
+    fireEvent.click(await screen.findByRole("option", { name: /Bob/ }));
     expect(
       screen.getByRole("heading", { name: "Message to Bob" }),
     ).toBeInTheDocument();
@@ -221,6 +227,27 @@ describe("React identity and mail flow", () => {
       }),
     );
     await screen.findByText("Signed and delivered to Bob.");
+  });
+  it("updates backend status when sending fails and preserves the draft", async () => {
+    fake.send.mockRejectedValueOnce(new ApiError("Backend offline", 0));
+    render(<App />);
+    await mail();
+    fireEvent.change(
+      screen.getByLabelText("Find users by username or public key"),
+      { target: { value: "Bob" } },
+    );
+    fireEvent.click(await screen.findByRole("option", { name: "Bob" }));
+    fireEvent.change(screen.getByLabelText("Message", { exact: true }), {
+      target: { value: "Keep this draft" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign & Send →" }));
+    await screen.findByText("Backend offline");
+    expect(
+      (await screen.findAllByText("Backend request failed")).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Message", { exact: true })).toHaveValue(
+      "Keep this draft",
+    );
   });
   it("clears identity and private keys on logout, including a delayed vault fetch", async () => {
     render(<App />);

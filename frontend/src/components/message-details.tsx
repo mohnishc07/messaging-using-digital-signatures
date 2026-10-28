@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { SignedMessage } from "@/lib/api.js";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import SmoothDrawer from "@/components/kokonutui/smooth-drawer";
+import { payload } from "@/lib/math.js";
 
 export function MessageDetails({
   message,
@@ -10,10 +18,36 @@ export function MessageDetails({
   onTrace: (message: SignedMessage) => void;
 }) {
   const [copied, setCopied] = useState("");
+  const evidence = (
+    <div className="signature-evidence">
+      <Badge variant="secondary">Ed25519 · accepted on delivery</Badge>
+      <p>
+        The inbox contains packages previously accepted by the backend. Opening
+        these details does not perform a fresh signature verification.
+      </p>
+      <dl>
+        <dt>Signature · Base64</dt>
+        <dd>{message.signature}</dd>
+        <dt>Exact signed UTF-8 payload</dt>
+        <dd>
+          {payload(message.senderId, message.receiverId, message.message)}
+        </dd>
+      </dl>
+      <pre className="math-value">{JSON.stringify(message, null, 2)}</pre>
+      <p>
+        The math lab traces this payload with a disposable key; it does not
+        reproduce the sender's private key.
+      </p>
+    </div>
+  );
   return (
-    <details className="message-details">
-      <summary>Inspect Ed25519 signature & signed package</summary>
-      <div className="detail-content">
+    <Collapsible className="message-details">
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="sm">
+          Inspect Ed25519 signature & signed package
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="detail-content">
         <dl>
           <dt>Sender</dt>
           <dd>{message.senderId}</dd>
@@ -23,6 +57,13 @@ export function MessageDetails({
           <dd>{message.signature}</dd>
         </dl>
         <div className="reader-actions">
+          <SmoothDrawer
+            title="Ed25519 signature evidence"
+            description={`${message.senderId} → ${message.receiverId} · stored delivery package`}
+            triggerLabel="Open verification drawer"
+          >
+            {evidence}
+          </SmoothDrawer>
           <Button
             type="button"
             variant="ghost"
@@ -49,8 +90,8 @@ export function MessageDetails({
             Trace payload in math lab →
           </Button>
         </div>
-      </div>
-    </details>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 export function Timestamp({ message }: { message: SignedMessage }) {

@@ -1,12 +1,16 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createApi, ApiError } from "@/lib/api.js";
 import type { User, UserKeys } from "@/lib/api.js";
 import { errorMessage, useTask } from "@/lib/use-task";
-import { MailWorkspace } from "@/components/mail-workspace";
 import { IdentityEntry, KeyVault } from "@/components/identity-screens";
 
 const api = createApi();
+const MailWorkspace = lazy(() =>
+  import("@/components/mail-workspace").then((module) => ({
+    default: module.MailWorkspace,
+  })),
+);
 type Screen = "home" | "create" | "vault" | "workspace";
 function App() {
   const [screen, setScreen] = useState<Screen>("home"),
@@ -84,46 +88,48 @@ function App() {
   };
   return (
     <>
-      <header className="app-header">
-        <a
-          href="#"
-          className="brand"
-          onClick={(event) => event.preventDefault()}
-        >
-          <span className="brand-mark">S</span>SignedChat
-          <span className="brand-tag">LAB</span>
-        </a>
-        <div className="header-actions">
-          <span className="environment">Ed25519 / demo environment</span>
-          {user && (
-            <>
-              <span className="session-name">{user.name}</span>
-              {screen !== "vault" && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={task.busy}
-                  onClick={() => {
-                    setNotice("");
-                    void task.run(
-                      async (current) => {
-                        const pair = await api.getUserKeys(user.name);
-                        if (current()) open(pair);
-                      },
-                      (error) => setNotice(errorMessage(error)),
-                    );
-                  }}
-                >
-                  Key vault
+      {screen !== "workspace" && (
+        <header className="app-header">
+          <a
+            href="#"
+            className="brand"
+            onClick={(event) => event.preventDefault()}
+          >
+            <span className="brand-mark">S</span>SignedChat
+            <span className="brand-tag">LAB</span>
+          </a>
+          <div className="header-actions">
+            <span className="environment">Ed25519 / demo environment</span>
+            {user && (
+              <>
+                <span className="session-name">{user.name}</span>
+                {screen !== "vault" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={task.busy}
+                    onClick={() => {
+                      setNotice("");
+                      void task.run(
+                        async (current) => {
+                          const pair = await api.getUserKeys(user.name);
+                          if (current()) open(pair);
+                        },
+                        (error) => setNotice(errorMessage(error)),
+                      );
+                    }}
+                  >
+                    Key vault
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={logout}>
+                  Logout ↗
                 </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={logout}>
-                Logout ↗
-              </Button>
-            </>
-          )}
-        </div>
-      </header>
+              </>
+            )}
+          </div>
+        </header>
+      )}
       {(screen === "home" || screen === "create") && (
         <IdentityEntry
           creating={screen === "create"}
@@ -156,7 +162,31 @@ function App() {
               {notice}
             </p>
           )}
-          <MailWorkspace key={user.name} user={user} api={api} />
+          <Suspense
+            fallback={
+              <p className="padded-view" role="status">
+                Opening Mail Workspace…
+              </p>
+            }
+          >
+            <MailWorkspace
+              key={user.name}
+              user={user}
+              api={api}
+              onLogout={logout}
+              vaultBusy={task.busy}
+              onVault={() => {
+                setNotice("");
+                void task.run(
+                  async (current) => {
+                    const pair = await api.getUserKeys(user.name);
+                    if (current()) open(pair);
+                  },
+                  (error) => setNotice(errorMessage(error)),
+                );
+              }}
+            />
+          </Suspense>
         </>
       )}
     </>
