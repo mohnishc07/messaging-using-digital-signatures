@@ -87,6 +87,8 @@ Install further components with `npx.cmd shadcn add button` or `npx.cmd shadcn a
 
 Home checks a username. A 404 opens Create User; connection errors remain errors. Existing or newly created users enter the copyable Key Vault, then Mail Workspace. The vault's private key state clears on Continue or Logout. Workspace identity is public-only and memory-only, with no localStorage/sessionStorage persistence. Logout unmounts all inbox, draft, simulation, and math state; async guards ignore late results. Copied clipboard text remains under the user's control.
 
+The identity screens use shadcn Cards, Inputs, Buttons, Badges, and Alerts over Kokonut's `background-paths`. Confirm creation using `slide-to-confirm` (drag the arrow, or focus it and press Enter/Space); failed requests reset the slider for retry. The vault displays `@username`, the X.509 public key, and a PKCS#8 private key behind controlled `spoiler-text`. Private-key text is inserted into the page only after reveal; copying is disabled until then. Hide, leave the vault, or log out to reset the reveal state. This visual concealment does not change backend access permissions.
+
 This is demo identity selection, not authenticated login. The backend deliberately exposes demo private keys through username lookup; use classroom keys only. Server-held keys and messages are in memory and reset on restart.
 
 Inbox includes every received sender, with backend-acceptance badges and expandable signatures. The current API has no timestamps, so the reading pane says **Not provided by server**. If a valid server `timestamp` is provided later, it is displayed rather than fabricated.

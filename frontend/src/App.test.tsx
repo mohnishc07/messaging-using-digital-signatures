@@ -80,7 +80,15 @@ describe("React identity and mail flow", () => {
       screen.queryByRole("button", { name: "Logout ↗" }),
     ).not.toBeInTheDocument();
     await login();
-    expect(screen.getByLabelText("Your private key")).toHaveValue(
+    expect(screen.queryByLabelText("Your private key")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Copy private key" }),
+    ).toBeDisabled();
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Reveal private key" }),
+      { key: "Enter" },
+    );
+    expect(screen.getByLabelText("Your private key")).toHaveTextContent(
       "private-Alice",
     );
     fireEvent.click(screen.getByRole("button", { name: "Copy private key" }));
@@ -91,6 +99,11 @@ describe("React identity and mail flow", () => {
     );
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
+    fireEvent.click(screen.getByRole("button", { name: "Hide private key" }));
+    expect(screen.queryByLabelText("Your private key")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Copy private key" }),
+    ).toBeDisabled();
   });
   it("routes only a missing username to creation and opens the new pair", async () => {
     fake.getUserKeys.mockRejectedValueOnce(new ApiError("Not found", 404));
@@ -101,16 +114,17 @@ describe("React identity and mail flow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue →" }));
     await screen.findByRole("heading", { name: "This identity is available" });
     fireEvent.click(
-      screen.getByRole("button", { name: "Create identity & view keys →" }),
+      screen.getByRole("button", {
+        name: "Slide to create identity. Press Enter to confirm.",
+      }),
     );
     await screen.findByRole("heading", { name: "Your Cryptographic Identity" });
     expect(fake.createUser).toHaveBeenCalledWith({
       name: "Carol",
       trusted: true,
     });
-    expect(screen.getByLabelText("Your private key")).toHaveValue(
-      "private-Carol",
-    );
+    expect(screen.getByRole("heading", { name: "@Carol" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Your private key")).not.toBeInTheDocument();
   });
   it("keeps connection errors on Home", async () => {
     fake.getUserKeys.mockRejectedValueOnce(new ApiError("Backend offline", 0));
@@ -124,6 +138,47 @@ describe("React identity and mail flow", () => {
       screen.getByRole("heading", { name: "Open your workspace" }),
     ).toBeInTheDocument();
     expect(fake.createUser).not.toHaveBeenCalled();
+  });
+  it("resets the creation slider after a backend error and allows retry", async () => {
+    fake.getUserKeys.mockRejectedValueOnce(new ApiError("Not found", 404));
+    fake.createUser.mockRejectedValueOnce(
+      new ApiError("Generation failed", 500),
+    );
+    render(<App />);
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "Carol" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Continue →" }));
+    const slider = await screen.findByRole("button", {
+      name: "Slide to create identity. Press Enter to confirm.",
+    });
+    fireEvent.click(slider);
+    await screen.findByText("Generation failed");
+    await waitFor(() =>
+      expect(slider).toHaveAttribute("aria-disabled", "false"),
+    );
+    expect(screen.queryByText("Identity created")).not.toBeInTheDocument();
+    fireEvent.click(slider);
+    await screen.findByRole("heading", { name: "Your Cryptographic Identity" });
+    expect(fake.createUser).toHaveBeenCalledTimes(2);
+  });
+  it("returns a concurrently registered name to login instead of creating twice", async () => {
+    fake.getUserKeys.mockRejectedValueOnce(new ApiError("Not found", 404));
+    fake.createUser.mockRejectedValueOnce(new ApiError("Already exists", 409));
+    render(<App />);
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "Carol" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Continue →" }));
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Slide to create identity. Press Enter to confirm.",
+      }),
+    );
+    await screen.findByText(/That username was just registered/);
+    expect(
+      screen.getByRole("heading", { name: "Open your workspace" }),
+    ).toBeInTheDocument();
   });
   it("shows mail from every sender and exact signatures with no fabricated time", async () => {
     render(<App />);

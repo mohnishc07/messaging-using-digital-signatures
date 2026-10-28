@@ -1533,3 +1533,78 @@ h1[tabindex="-1"]:focus {
 .surface form .form-row {
   margin-bottom: 16px;
 }
+
+/* Identity screens: the background remains decorative behind usable controls. */
+.identity-hero {
+  min-height: calc(100svh - 74px);
+  background: #09090b;
+}
+.identity-hero > [aria-hidden="true"] {
+  opacity: 0.45;
+}
+.identity-entry {
+  position: relative;
+  width: 100%;
+  z-index: 1;
+}
+.identity-entry-card {
+  min-width: 0;
+  padding: 28px 12px;
+  background: #111114ee;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 24px 80px #0005;
+}
+.identity-entry-card h2 {
+  margin: 16px 0 0;
+  font-size: 25px;
+}
+.identity-entry-card p {
+  margin-bottom: 12px;
+}
+.confirmation-help {
+  font-size: 11px;
+}
+.identity-summary[data-slot="card"] {
+  flex-direction: row;
+  padding: 22px;
+}
+.identity-summary [data-slot="badge"] {
+  margin-left: auto;
+}
+.vault-key-card {
+  min-width: 0;
+}
+.identity-key {
+  min-height: 108px;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid #303038;
+  border-radius: 8px;
+  background: #09090b;
+  color: #d4d4d8;
+  font:
+    12px/1.9 Consolas,
+    monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.private-key-block {
+  display: flex;
+  align-items: center;
+  color: #ddbd83;
+}
+.vault-key-card .key-card-heading {
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .identity-entry-card {
+    padding: 20px 4px;
+  }
+  .identity-summary[data-slot="card"] {
+    flex-wrap: wrap;
+  }
+  .identity-summary [data-slot="badge"] {
+    margin-left: 0;
+  }
+}
