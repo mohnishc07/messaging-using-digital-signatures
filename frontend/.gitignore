@@ -1,5 +1,8 @@
 node_modules/
 dist/
-.env.local
+coverage/
+.env
+.env.*
+!.env.example
 *.tsbuildinfo
 *.class

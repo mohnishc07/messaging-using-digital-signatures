@@ -1,8 +1,8 @@
 .git
 **/target
 **/node_modules
+**/dist
+**/coverage
 **/.env
-**/.env.local
-frontend/tools
-frontend/tests.html
-frontend/tests.js
+**/.env.*
+frontend/legacy

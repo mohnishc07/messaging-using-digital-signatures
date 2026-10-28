@@ -1,7 +1,14 @@
+FROM node:24-alpine AS frontend-build
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /build
 COPY backend/ ./
-COPY frontend/index.html frontend/styles.css frontend/api.js frontend/app.js frontend/math.js frontend/math-ui.js ./src/main/resources/static/
+COPY --from=frontend-build /frontend/dist/ ./src/main/resources/static/
 RUN chmod +x mvnw && ./mvnw -B -ntp package
 
 FROM eclipse-temurin:21-jre

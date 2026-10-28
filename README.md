@@ -1,73 +1,59 @@
-# Messaging using digital signatures
+# SignedChat — messaging with digital signatures
 
-The project separates the backend and frontend into their own folders.
+A Java/Spring Boot Ed25519 backend with a React + Vite + TypeScript frontend. Tailwind CSS v4, shadcn/ui, and Kokonut UI provide the obsidian dark interface.
 
 ```text
-messaging-using-digital-signatures/
-├── backend/       Java / Spring Boot API, source, tests, and Maven wrapper
-├── frontend/      Plain HTML, CSS, JavaScript, and local server launcher
-└── README.md      Project overview
+backend/           Java API, Maven wrapper, source and tests
+frontend/src/      React components and typed API/math imports
+frontend/legacy/   Archived vanilla UI and its tests, for reference
+Dockerfile         Node frontend build → Java build → Java-only runtime
+render.yaml        Existing Render web service configuration
 ```
 
-The frontend and backend live together in this repository. No Node.js, npm, React, or frontend build step is required.
+## Run locally
 
-## Run the backend
-
-Requires JDK 21 or newer. No Maven installation is needed.
-
-Windows PowerShell:
+Install JDK 21+ and Node.js 22.12+ (Node 24 recommended).
 
 ```powershell
+# Terminal 1
 cd backend
 .\mvnw.cmd spring-boot:run
-```
 
-macOS / Linux:
-
-```sh
-cd backend
-./mvnw spring-boot:run
-```
-
-The API runs at **http://localhost:8080**. Keep this terminal running while using the frontend.
-
-## Run the frontend
-
-Open a second terminal at the repository root:
-
-```powershell
+# Terminal 2, starting at repository root
 cd frontend
-.\start.cmd
+npm.cmd ci
+npm.cmd run dev
 ```
 
-Open **http://127.0.0.1:5173**. Enter a username on **Home**: existing identities open the **Key Vault (Page 1)**; new usernames go through **Create User** first. Inspect/copy the keys, then continue to the mail workspace for Inbox, Compose/search, user simulation, and Signing math. **Logout** clears the in-memory session and returns Home. This username flow is not authentication; demo keys are accessible to anyone who knows the name. Keep both terminals running.
+Open http://127.0.0.1:5173. Vite proxies API requests to http://127.0.0.1:8080. Use `npm.cmd` on Windows if PowerShell blocks npm.ps1. On macOS/Linux, use `./mvnw` and `npm` instead.
 
-On macOS / Linux, run `cd frontend` and `java tools/DevServer.java`.
+Enter a username on Home. Existing users open the Key Vault; unknown names go through creation first. Inspect/copy the demo keys, then continue to Inbox, Compose/public-key search, user simulation, or signing math. Logout clears the in-memory identity and React workspace state.
 
-The frontend launcher uses the same JDK 21+ prerequisite as the backend. Its local development server forwards `/api` to port 8080. To use another frontend port, run `.\start.cmd 5174` from `frontend/`. Stop either server with Ctrl+C.
+The username flow is not authentication. The backend deliberately allows retrieving demo private keys by username; use classroom keys only.
 
-## Check the frontend
+## Checks and production build
 
-With the frontend server running, open **http://127.0.0.1:5173/tests.html** for the dependency-free browser tests.
-
-## Test the backend
-
-From the `backend/` directory:
+From frontend/:
 
 ```powershell
-.\mvnw.cmd test
+npm.cmd test
+npm.cmd run lint
+npm.cmd run build
+npm.cmd run preview
 ```
 
-On macOS / Linux use `./mvnw test`.
+Tests cover React identity/mail flows, stale-response logout handling, imported REST/math helpers, and the original Ed25519 vectors in math.test.cjs. The build type-checks the application and produces frontend/dist/.
 
-See [backend/README.md](backend/README.md) for the API endpoints, examples, signing design, and current limitations.
+From backend/, run `.\mvnw.cmd test`.
 
-See [frontend/README.md](frontend/README.md) for frontend configuration, operation, and optional hosting directly from Spring Boot.
+See [frontend/README.md](frontend/README.md) for architecture, registry setup, named imports, legacy references, proxy configuration, and testing. See [backend/README.md](backend/README.md) for API schemas and security behavior.
 
-## Host the backend on Render
+## Hosting
 
-The root `Dockerfile` copies the browser assets into Spring Boot's static resources, builds and tests the Java application, then runs its JAR on the hosting provider's `PORT`. The frontend and API are served together from one Render service. The `render.yaml` Blueprint requests one free Docker web service. Import this repository as a Render Blueprint to deploy it, or create a Docker web service from the public repository URL.
+The root Dockerfile builds frontend/dist/ with Node, embeds it in Spring Boot's static resources, runs the Java tests, and packages the app. The runtime remains Java-only; frontend source, legacy files, and node_modules are not served.
 
-Open **https://signedchat-backend.onrender.com** for the deployed messaging interface. It uses same-origin `/api` calls, so no frontend API configuration is needed. `FRONTEND_ORIGIN` additionally permits browser requests from the existing ChatGPT Site origin if that frontend is connected later. It does not add authentication. Public repository deployments require a manual Render deployment after pushing changes.
+Existing public application: https://signedchat-backend.onrender.com
 
-The current backend is a classroom prototype. Users, keys, and inboxes are in memory and disappear on restart. Render's free services can spin down when idle, so initial requests may take longer and demo data can be lost. API requests allow 75 seconds for cold starts. No database is configured.
+Frontend and API share that origin. The Java app uses the hosting provider's PORT. Public Git repository URL services on Render require manual deploys after pushing; inspect existing deployments before triggering one.
+
+The prototype stores users, keys, and inboxes only in memory. Restarting or redeploying resets them. Render's free service can sleep, so first requests may be slow. Messages are plaintext, replay protection is absent, and public-key trust is a demo server flag. Signing math uses disposable example keys; real messaging uses established Java cryptography.
