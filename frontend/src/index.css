@@ -83,40 +83,6 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -131,36 +97,35 @@
   html {
     @apply font-sans;
   }
-} /* Fixed dark obsidian theme, with shadcn semantic tokens. */
-:root,
-.dark {
-  color-scheme: dark;
-  --background: #09090b;
-  --foreground: #f4f4f5;
-  --card: #121216;
-  --card-foreground: #f4f4f5;
-  --popover: #18181b;
-  --popover-foreground: #f4f4f5;
-  --primary: #80dbb9;
-  --primary-foreground: #092b20;
-  --secondary: #202024;
-  --secondary-foreground: #e4e4e7;
-  --muted: #202024;
-  --muted-foreground: #a1a1aa;
-  --accent: #24242b;
-  --accent-foreground: #f4f4f5;
-  --destructive: #f87171;
-  --border: #27272a;
-  --input: #3f3f46;
-  --ring: #80dbb9;
-  --sidebar: #101014;
-  --sidebar-foreground: #e4e4e7;
-  --sidebar-primary: #80dbb9;
-  --sidebar-primary-foreground: #092b20;
-  --sidebar-accent: #24242b;
-  --sidebar-accent-foreground: #f4f4f5;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #80dbb9;
+} /* Fixed light theme shared by shadcn components. */
+:root {
+  color-scheme: light;
+  --background: #f5f7fb;
+  --foreground: #182b43;
+  --card: #ffffff;
+  --card-foreground: #182b43;
+  --popover: #ffffff;
+  --popover-foreground: #182b43;
+  --primary: #087652;
+  --primary-foreground: #ffffff;
+  --secondary: #edf3fb;
+  --secondary-foreground: #254461;
+  --muted: #eef2f7;
+  --muted-foreground: #52657c;
+  --accent: #e5effc;
+  --accent-foreground: #194d86;
+  --destructive: #b42332;
+  --border: #d4ddea;
+  --input: #c5d0df;
+  --ring: #245fa6;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #254461;
+  --sidebar-primary: #087652;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e5effc;
+  --sidebar-accent-foreground: #194d86;
+  --sidebar-border: #d4ddea;
+  --sidebar-ring: #245fa6;
 }
 @theme inline {
   --font-mono: "Cascadia Code", "Consolas", monospace;

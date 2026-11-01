@@ -172,7 +172,7 @@ function TaskTrailing({ task }: { task: IslandTask }) {
     const { label, onClick } = task.action;
     return (
       <button
-        className="-my-1 shrink-0 rounded-full bg-white/12 px-2.5 py-1 font-medium text-white text-xs transition-colors duration-150 hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-white/60"
+        className="-my-1 shrink-0 rounded-full bg-secondary px-2.5 py-1 font-medium text-foreground text-xs transition-colors duration-150 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
         onClick={(event) => {
           event.stopPropagation();
           onClick();
@@ -186,7 +186,7 @@ function TaskTrailing({ task }: { task: IslandTask }) {
   if (task.status === "running" && typeof task.progress === "number") {
     const percent = Math.round(Math.min(1, Math.max(0, task.progress)) * 100);
     return (
-      <span className="flex shrink-0 items-center text-white/55 text-xs">
+      <span className="flex shrink-0 items-center text-muted-foreground text-xs">
         <RollingNumber value={percent} />%
       </span>
     );
@@ -201,7 +201,7 @@ function TaskRow({ task }: { task: IslandTask }) {
       <span className="min-w-0 flex-1 truncate text-[13px] leading-4">
         {task.label}
         {task.detail ? (
-          <span className="text-white/50"> · {task.detail}</span>
+          <span className="text-muted-foreground"> · {task.detail}</span>
         ) : null}
       </span>
       <TaskTrailing task={task} />
@@ -377,7 +377,7 @@ export function StatusIsland({
                     scale: 1 - (i + 1) * 0.06,
                   }}
                   aria-hidden="true"
-                  className="absolute inset-0 rounded-[20px] bg-zinc-800 ring-1 ring-white/5 dark:bg-zinc-800"
+                  className="absolute inset-0 rounded-[20px] bg-secondary ring-1 ring-border"
                   initial={false}
                   // biome-ignore lint/suspicious/noArrayIndexKey: layers are positional
                   key={i}
@@ -386,7 +386,7 @@ export function StatusIsland({
                 />
               ))}
               <motion.div
-                className="relative overflow-hidden bg-zinc-950 text-white shadow-black/20 shadow-lg ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10"
+                className="relative overflow-hidden bg-card text-foreground shadow-slate-900/10 shadow-lg ring-1 ring-border"
                 layout
                 onBlur={handleBlur}
                 onFocus={handleFocus}
@@ -439,7 +439,7 @@ export function StatusIsland({
                           <span className="min-w-0 flex-1 truncate text-[13px] leading-4">
                             {current.label}
                             {current.detail ? (
-                              <span className="text-white/50">
+                              <span className="text-muted-foreground">
                                 {" "}
                                 · {current.detail}
                               </span>
@@ -469,7 +469,7 @@ export function StatusIsland({
 function TaskTrailingInert({ task }: { task: IslandTask }) {
   if (task.action) {
     return (
-      <span className="-my-1 inline-block rounded-full bg-white/12 px-2.5 py-1 font-medium text-xs">
+      <span className="-my-1 inline-block rounded-full bg-secondary px-2.5 py-1 font-medium text-xs">
         {task.action.label}
       </span>
     );
