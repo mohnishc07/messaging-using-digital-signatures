@@ -19,6 +19,7 @@ export interface SendMessage {
   content: string;
 }
 export interface Api {
+  lab(path?: string, body?: unknown, method?: string): Promise<unknown>;
   listUsers(): Promise<User[]>;
   getUser(name: string): Promise<User>;
   getUserKeys(name: string): Promise<UserKeys>;

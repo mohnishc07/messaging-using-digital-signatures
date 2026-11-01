@@ -16,32 +16,14 @@ public class SignatureService {
         return generator.generateKeyPair();
     }
 
-    // deprecated because we are not going to use the sign method directly, instead we will use the signMessage method which will take care of signing the message and creating a signed message object
-    //     public byte[] sign(byte[] message, PrivateKey privateKey)
-    //         throws GeneralSecurityException {
-    //         // So a private key is like a name of the person, so we are not going to reveal the name and ask him to put up a signature to verify the person is real or not
-    //         // We create a signature object which gets initialised with that specific algorithm
-    //         // then each byte of the private key is used to create the signature and update the message with that signature
-    //
-    //         Signature signature = Signature.getInstance("Ed25519");
-    //         signature.initSign(privateKey);
-    //         signature.update(message);
-    //
-    //         return signature.sign();
-    //     }
     public SignedMessage signMessage(
         String message,
         PrivateKey privateKey,
         String senderId,
         String receiverId
     ) throws GeneralSecurityException {
-        byte[] messageBytes = message.getBytes();
-        Signature signature = Signature.getInstance("Ed25519");
-        signature.initSign(privateKey);
-        signature.update(messageBytes);
-        byte[] signedMessage = signature.sign();
-
-        return new SignedMessage(message, signedMessage, senderId, receiverId);
+        byte[] payload = new com.mohnish.signedchat.encoding.PayloadEncoder().encode(senderId, receiverId, message);
+        return new SignedMessage(message, sign(payload, privateKey), senderId, receiverId);
     }
 
     public byte[] sign(byte[] payload, PrivateKey privateKey)

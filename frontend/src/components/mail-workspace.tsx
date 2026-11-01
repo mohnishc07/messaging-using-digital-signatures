@@ -30,7 +30,7 @@ const titles: Record<View, string> = {
   compose: "Compose / search",
   simulation: "Alice ⇄ Bob simulation",
   math: "Signing math",
-  attacks: "Attack Lab",
+  attacks: "Tests",
 };
 export function MailWorkspace({
   user,
@@ -233,6 +233,15 @@ export function MailWorkspace({
               </TabsTrigger>
             ))}
           </TabsList>
+          <details className="lab-user-details">
+            <summary>Your identity & public key</summary>
+            <strong>{user.name}</strong>
+            <p>Trusted: {String(user.trusted)}</p>
+            <pre>{user.publicKey}</pre>
+            <Button variant="outline" size="sm" onClick={onVault}>
+              Open private key vault
+            </Button>
+          </details>
           <div className="sidebar-bottom">
             Ed25519 · signed mail
             <p>

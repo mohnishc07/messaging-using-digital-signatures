@@ -57,3 +57,48 @@ Existing public application: https://signedchat-backend.onrender.com
 Frontend and API share that origin. The Java app uses the hosting provider's PORT. Public Git repository URL services on Render require manual deploys after pushing; inspect existing deployments before triggering one.
 
 The prototype stores users, keys, and inboxes only in memory. Restarting or redeploying resets them. Render's free service can sleep, so first requests may be slow. Messages are plaintext, replay protection is absent, and public-key trust is a demo server flag. Signing math uses disposable example keys; real messaging uses established Java cryptography.
+
+## Manual security experiments
+
+Open a demo identity, continue to Mail Workspace, and choose **Tests** in the left navigation.
+User information remains in the sidebar. Create an isolated lab; Alice, Bob, and Mallory are
+fresh temporary identities, separate from normal mail. The seven experiment selectors provide
+instructions, not automatic pass/fail scripts.
+
+1. Prepare a message (creates a unique ID), then sign the current package with the selected key.
+2. Inspect the signed original. Edit any package field without signing again to test tampering.
+3. Verify without delivery, or deliver and inspect the backend decision and recipient inbox.
+4. Capture a signed or received package; **Deliver again without re-signing** submits an immutable
+   copy with the same ID and signature. With replay protection off, duplicates are accepted;
+   with it on, a previously accepted ID is rejected. Preparing a new identical-text message
+   creates a different signed ID, so intentional repeats are allowed.
+5. For impersonation, claim Alice while signing with Mallory. For key substitution, apply
+   Mallory's public key under Alice in Bob's directory, then verify again. A valid result with
+   a mismatched pinned fingerprint illustrates why unauthenticated key distribution is unsafe.
+6. Select a received record to edit stored text without re-signing, then verify that record.
+7. Export the evidence log for the report. Reset deletes the old lab and generates fresh keys.
+
+The lab's versioned signed payload is `signedchat-lab-v1:` followed by colon-separated Base64
+UTF-8 fields in this exact order: message ID, sender ID, recipient ID, content. Ed25519 signs
+those payload bytes directly. The displayed SHA-256 digest is only a comparison aid.
+Normal messaging retains its existing three-field envelope for compatibility; replay protection
+and recipient-specific editable trust maps are currently lab-only. Lab records are not normal
+mailbox records. Neither interface encrypts message content. No production authentication or
+persistent database is implied by this classroom prototype. Lab key pins are generated locally
+for demonstration; a real system needs an independent authenticated trust-establishment process.
+
+Every action returns actual Java results. Missing trust reports signature verification as not
+checked; signature validity, key-pin match, recipient match, duplicate detection, and acceptance
+are distinct. Verification-only does not store a message. Transport failures are errors, never
+successful attack rejection. Logs omit private keys, but contain message text and public keys.
+Labs are bounded, in memory, reset on restart, and may expire after many new labs are created.
+
+For a repeatable real-HTTP check against your running backend:
+
+```bash
+python3 scripts/verify-lab.py http://localhost:8080
+```
+
+This creates and deletes only its own temporary lab, exercises all seven experiments, and exits
+with an error if an observed outcome differs. It requires Python 3, with no third-party packages.
+GitHub Actions runs the Java 21 backend suite and frontend build, tests, and lint on pushes.

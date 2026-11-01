@@ -53,7 +53,7 @@ public class MessagingService {
         return new SignedMessage(content, signature, senderId, recipientId);
     }
 
-    public boolean receive(SignedMessage message, String receivingUserId)
+    public synchronized boolean receive(SignedMessage message, String receivingUserId)
         throws GeneralSecurityException {
         if (
             message == null ||
@@ -109,7 +109,7 @@ public class MessagingService {
         return id == null || id.isBlank();
     }
 
-    public List<SignedMessage> getInbox(String userId) {
+    public synchronized List<SignedMessage> getInbox(String userId) {
         return new ArrayList<>(inboxes.getOrDefault(userId, List.of()));
     }
 }

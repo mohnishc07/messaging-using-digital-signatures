@@ -14,7 +14,7 @@ public class SignedMessage {
         String receiverId
     ) {
         this.message = message;
-        this.signature = signature;
+        this.signature = signature == null ? null : signature.clone();
         this.senderId = senderId;
         this.receiverId = receiverId;
     }
@@ -24,7 +24,7 @@ public class SignedMessage {
     }
 
     public byte[] getSignature() {
-        return signature;
+        return signature == null ? null : signature.clone();
     }
 
     public String getSenderId() {

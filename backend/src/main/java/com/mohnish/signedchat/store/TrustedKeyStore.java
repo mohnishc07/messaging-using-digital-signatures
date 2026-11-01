@@ -5,17 +5,17 @@ import java.util.Map;
 
 public class TrustedKeyStore {
 
-    private Map<String, PublicKey> trustedKeySet = new java.util.HashMap<>();
+    private final Map<String, PublicKey> trustedKeySet = new java.util.HashMap<>();
 
-    public void registerTrustedKey(String userId, PublicKey publicKey) {
+    public synchronized void registerTrustedKey(String userId, PublicKey publicKey) {
         this.trustedKeySet.put(userId, publicKey);
     }
 
-    public PublicKey getTrustedKey(String userId) {
+    public synchronized PublicKey getTrustedKey(String userId) {
         return this.trustedKeySet.get(userId);
     }
 
-    public boolean isTrusted(String userId) {
+    public synchronized boolean isTrusted(String userId) {
         return this.trustedKeySet.containsKey(userId);
     }
 }

@@ -57,6 +57,11 @@ function createApi(baseUrl = "", fetchImpl = (...args) => fetch(...args)) {
   }
   const post = (body) => ({ method: "POST", body: JSON.stringify(body) });
   return {
+    lab: (path = "", body, method = "POST") =>
+      request(`/labs${path}`, {
+        method,
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      }),
     listUsers: () => request("/users"),
     getUser: (name) => request(`/users/${encodeURIComponent(name)}`),
     getUserKeys: (name) =>
