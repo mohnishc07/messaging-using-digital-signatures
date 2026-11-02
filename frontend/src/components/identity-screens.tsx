@@ -1,12 +1,16 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import BackgroundPaths from "@/components/kokonutui/background-paths";
-import { Spoiler } from "@/components/kokonutui/spoiler-text";
-import SlideToConfirm from "@/components/kokonutui/slide-to-confirm";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import type { UserKeys } from "@/lib/api.js";
 
 export function IdentityEntry({
@@ -29,127 +33,79 @@ export function IdentityEntry({
   onBack: () => void;
 }) {
   return (
-    <BackgroundPaths className="identity-hero" count={30} speed={0.35}>
-      <main className="entry-screen identity-entry">
-        <div className="entry-story">
-          <Badge variant="outline">ED25519 / SIGNED MESSAGING</Badge>
-          <h1>
-            {creating ? (
-              <>
-                Start with
-                <br />a fresh key pair.
-              </>
-            ) : (
-              <>
-                Your messages.
-                <br />
-                Your signature.
-              </>
-            )}
-          </h1>
-          <p>
-            {creating
-              ? "Generate an Ed25519 identity and inspect the keys before sending your first message."
-              : "Open your identity, inspect your keys, and exchange signed mail. See the mathematics behind every signature."}
-          </p>
-          <div className="story-grid">
-            <span>
-              01 <b>Choose an identity</b>
-            </span>
-            <span>
-              02 <b>Inspect your keys</b>
-            </span>
-            <span>
-              03 <b>Exchange signed mail</b>
-            </span>
-          </div>
-        </div>
-        <Card className="identity-entry-card">
-          <CardHeader>
-            <span className="step-label">
-              {creating ? "CREATE USER / 02" : "GET STARTED / 01"}
-            </span>
-            <h2>
+    <main className="entry-screen identity-entry">
+      <Card className="identity-entry-card">
+        <CardHeader>
+          <CardTitle>
+            <h1>
               {creating ? "This identity is available" : "Open your workspace"}
-            </h2>
-            <p>
-              {creating
-                ? "No user was found with that name. Confirm to create it and open your Key Vault."
-                : "Enter an existing username, or choose a new one to create an identity."}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!creating) onLookup();
-              }}
-            >
-              <label htmlFor="username">
-                {creating ? "New username" : "Username"}
-              </label>
-              <Input
-                id="username"
-                value={name}
-                onChange={(event) => onName(event.target.value)}
-                required
-                maxLength={64}
-                autoComplete="off"
-                placeholder="e.g. Alice"
-                disabled={busy || creating}
-              />
-              {creating ? (
-                <div className="mt-5">
-                  <SlideToConfirm
-                    label="Slide to create identity"
-                    confirmingLabel="Generating keys"
-                    doneLabel="Identity created"
-                    onConfirm={onCreate}
-                    disabled={busy || !name.trim()}
-                    resetAfter={null}
-                  />
-                  <p className="confirmation-help">
-                    Drag the arrow, or focus it and press Enter.
-                  </p>
-                </div>
-              ) : (
-                <Button
-                  className="mt-5 w-full"
-                  type="submit"
-                  disabled={busy || !name.trim()}
-                >
-                  {busy ? "Loading identity…" : "Continue →"}
-                </Button>
-              )}
-            </form>
-            {notice && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertTitle>Could not continue</AlertTitle>
-                <AlertDescription>{notice}</AlertDescription>
-              </Alert>
-            )}
-            {creating ? (
-              <Button
-                className="mt-4"
-                variant="ghost"
-                disabled={busy}
-                onClick={onBack}
-              >
-                ← Use another username
+            </h1>
+          </CardTitle>
+          <CardDescription>
+            {creating
+              ? "Create this demo identity and its Ed25519 keys."
+              : "Enter a username to open signed mail and security tests."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (creating) void onCreate().catch(() => {});
+              else onLookup();
+            }}
+          >
+            <FieldGroup>
+              <Field data-disabled={busy || creating}>
+                <FieldLabel htmlFor="username">
+                  {creating ? "New username" : "Username"}
+                </FieldLabel>
+                <Input
+                  id="username"
+                  value={name}
+                  onChange={(event) => onName(event.target.value)}
+                  required
+                  maxLength={64}
+                  autoComplete="off"
+                  placeholder="e.g. Alice"
+                  disabled={busy || creating}
+                />
+              </Field>
+              <Button type="submit" disabled={busy || !name.trim()}>
+                {busy
+                  ? creating
+                    ? "Generating keys…"
+                    : "Loading identity…"
+                  : creating
+                    ? "Create identity"
+                    : "Continue →"}
               </Button>
-            ) : (
-              <Alert className="mt-6">
-                <AlertTitle>Classroom demo access</AlertTitle>
-                <AlertDescription>
-                  A username selects an identity; it does not authenticate
-                  ownership. Demo keys can be retrieved by username.
-                </AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-      </main>
-    </BackgroundPaths>
+            </FieldGroup>
+          </form>
+          {notice && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertTitle>Could not continue</AlertTitle>
+              <AlertDescription>{notice}</AlertDescription>
+            </Alert>
+          )}
+          {creating ? (
+            <Button
+              className="mt-4"
+              variant="ghost"
+              disabled={busy}
+              onClick={onBack}
+            >
+              ← Use another username
+            </Button>
+          ) : (
+            <p className="entry-note">
+              Classroom demo. A username selects an identity; it does not
+              authenticate ownership.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </main>
   );
 }
 
@@ -243,18 +199,13 @@ export function KeyVault({
           </CardHeader>
           <CardContent>
             <div className="identity-key private-key-block">
-              <Spoiler
-                revealed={revealed}
-                onRevealedChange={setRevealed}
-                label="Reveal private key"
-                className="break-all font-mono"
-              >
-                {revealed ? (
-                  <span aria-label="Your private key">{pair.privateKey}</span>
-                ) : (
-                  "Click to reveal your private signing key"
-                )}
-              </Spoiler>
+              {revealed ? (
+                <span aria-label="Your private key">{pair.privateKey}</span>
+              ) : (
+                <Button variant="outline" onClick={() => setRevealed(true)}>
+                  Reveal private key
+                </Button>
+              )}
             </div>
             <p>PKCS#8 · Base64. Keep your private key secret.</p>
             {revealed && (
