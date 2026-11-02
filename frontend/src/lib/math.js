@@ -99,9 +99,9 @@ function base64(bytes) {
   for (const b of bytes) value += String.fromCharCode(b);
   return btoa(value);
 }
-function payload(sender, recipient, content) {
+function payload(sender, recipient, content, nonce) {
   const utf8 = new TextEncoder();
-  return `${base64(utf8.encode(sender))}:${base64(utf8.encode(recipient))}:${base64(utf8.encode(content))}`;
+  return `${nonce ? "signedchat-v2:" + base64(utf8.encode(nonce)) + ":" : ""}${base64(utf8.encode(sender))}:${base64(utf8.encode(recipient))}:${base64(utf8.encode(content))}`;
 }
 async function traceSignature(seed, message, includeTrace = true) {
   if (!(seed instanceof Uint8Array) || seed.length !== 32)

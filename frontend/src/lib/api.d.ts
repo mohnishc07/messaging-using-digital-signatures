@@ -7,6 +7,7 @@ export interface UserKeys extends User {
   privateKey: string;
 }
 export interface SignedMessage {
+  nonce?: string;
   senderId: string;
   receiverId: string;
   message: string;

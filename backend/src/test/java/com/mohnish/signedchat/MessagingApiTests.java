@@ -145,4 +145,21 @@ class MessagingApiTests {
             )
             .andExpect(status().isBadRequest());
     }
+    @Test
+    void exactReplayIsRejectedButNewSigningOfSameTextIsAccepted() throws Exception {
+        createUser("nonceAlice", true);
+        createUser("nonceBob", true);
+        String request = json("nonceAlice", "nonceBob", "same text");
+        String first = mvc.perform(post("/api/messages/sign").contentType(MediaType.APPLICATION_JSON).content(request))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.nonce").isNotEmpty())
+            .andReturn().getResponse().getContentAsString();
+        mvc.perform(post("/api/users/nonceBob/inbox").contentType(MediaType.APPLICATION_JSON).content(first))
+            .andExpect(status().isCreated());
+        mvc.perform(post("/api/users/nonceBob/inbox").contentType(MediaType.APPLICATION_JSON).content(first))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.accepted", is(false)));
+        mvc.perform(post("/api/messages").contentType(MediaType.APPLICATION_JSON).content(request))
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.delivered", is(true)));
+        mvc.perform(get("/api/users/nonceBob/inbox")).andExpect(jsonPath("$", hasSize(2)));
+    }
+
 }

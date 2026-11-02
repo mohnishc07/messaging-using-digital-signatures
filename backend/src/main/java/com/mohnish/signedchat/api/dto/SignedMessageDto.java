@@ -10,14 +10,16 @@ public record SignedMessageDto(
     @NotNull String message,
     @NotBlank String signature,
     @NotBlank String senderId,
-    @NotBlank String receiverId
+    @NotBlank String receiverId,
+    @NotBlank @jakarta.validation.constraints.Pattern(regexp = "[A-Za-z0-9+/]{43}=") String nonce
 ) {
     public static SignedMessageDto of(SignedMessage m) {
         return new SignedMessageDto(
             m.getMessage(),
             Base64.getEncoder().encodeToString(m.getSignature()),
             m.getSenderId(),
-            m.getReceiverId()
+            m.getReceiverId(),
+            m.getNonce()
         );
     }
 
@@ -27,7 +29,8 @@ public record SignedMessageDto(
             message,
             Base64.getDecoder().decode(signature),
             senderId,
-            receiverId
+            receiverId,
+            nonce
         );
     }
 }

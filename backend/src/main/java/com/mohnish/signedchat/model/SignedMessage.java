@@ -2,6 +2,7 @@ package com.mohnish.signedchat.model;
 
 public class SignedMessage {
 
+    private final String nonce;
     private final String message;
     private final byte[] signature;
     private final String senderId;
@@ -11,13 +12,17 @@ public class SignedMessage {
         String message,
         byte[] signature,
         String senderId,
-        String receiverId
+        String receiverId,
+        String nonce
     ) {
+        this.nonce = nonce;
         this.message = message;
         this.signature = signature == null ? null : signature.clone();
         this.senderId = senderId;
         this.receiverId = receiverId;
     }
+
+    public String getNonce() { return nonce; }
 
     public String getMessage() {
         return message;

@@ -19,6 +19,8 @@ export function MessageDetails({ message }: { message: SignedMessage }) {
       </CollapsibleTrigger>
       <CollapsibleContent className="detail-content">
         <dl>
+          <dt>Replay nonce</dt>
+          <dd>{message.nonce || "Legacy package — no nonce"}</dd>
           <dt>Sender</dt>
           <dd>{message.senderId}</dd>
           <dt>Recipient</dt>
@@ -29,7 +31,12 @@ export function MessageDetails({ message }: { message: SignedMessage }) {
         <dl>
           <dt>Exact signed payload</dt>
           <dd>
-            {payload(message.senderId, message.receiverId, message.message)}
+            {payload(
+              message.senderId,
+              message.receiverId,
+              message.message,
+              message.nonce,
+            )}
           </dd>
         </dl>
         <p>

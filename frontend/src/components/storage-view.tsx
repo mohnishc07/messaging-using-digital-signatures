@@ -280,6 +280,7 @@ export function StorageView({ api }: { api: Api }) {
               <TableHead>Claimed sender</TableHead>
               <TableHead>Signed recipient</TableHead>
               <TableHead>Plaintext content</TableHead>
+              <TableHead>Replay nonce</TableHead>
               <TableHead>Signature · Base64</TableHead>
             </TableRow>
           </TableHeader>
@@ -301,6 +302,9 @@ export function StorageView({ api }: { api: Api }) {
                   <TableCell>{packet.receiverId}</TableCell>
                   <TableCell className="storage-message">
                     {packet.message}
+                  </TableCell>
+                  <TableCell>
+                    <code>{packet.nonce || "Legacy package — no nonce"}</code>
                   </TableCell>
                   <TableCell>
                     <code>{packet.signature}</code>
