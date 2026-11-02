@@ -2,6 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { Api } from "@/lib/api.js";
 import "./tests-panel.css";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 
 type Packet = {
   messageId: string;
@@ -67,62 +75,62 @@ const tests = {
   ],
 } as const;
 const hints: Record<keyof typeof tests, Partial<Record<string, string>>> = {
-  "message": {
-    "prepare": "1. Prepare Alice → Bob",
-    "sign": "2. Sign unchanged package",
-    "message": "3. Edit message; keep signature",
-    "verify": "4. Verify edited package",
-    "evidence": "5. Inspect signature validity"
+  message: {
+    prepare: "1. Prepare Alice → Bob",
+    sign: "2. Sign unchanged package",
+    message: "3. Edit message; keep signature",
+    verify: "4. Verify edited package",
+    evidence: "5. Inspect signature validity",
   },
-  "signature": {
-    "prepare": "1. Prepare Alice → Bob",
-    "sign": "2. Sign unchanged package",
-    "signature": "3. Edit signature or flip",
-    "flip": "3. Alternatively, flip one bit",
-    "verify": "4. Verify modified signature",
-    "evidence": "5. Inspect signature validity"
+  signature: {
+    prepare: "1. Prepare Alice → Bob",
+    sign: "2. Sign unchanged package",
+    signature: "3. Edit signature or flip",
+    flip: "3. Alternatively, flip one bit",
+    verify: "4. Verify modified signature",
+    evidence: "5. Inspect signature validity",
   },
-  "impersonation": {
-    "sender": "1. Claim sender Alice",
-    "prepare": "2. Prepare Alice → Bob",
-    "signer": "3. Choose Mallory’s signing key",
-    "sign": "4. Sign with Mallory’s key",
-    "verify": "5. Verify claimed Alice identity",
-    "evidence": "6. Compare verification key fingerprints"
+  impersonation: {
+    sender: "1. Claim sender Alice",
+    prepare: "2. Prepare Alice → Bob",
+    signer: "3. Choose Mallory’s signing key",
+    sign: "4. Sign with Mallory’s key",
+    verify: "5. Verify claimed Alice identity",
+    evidence: "6. Compare verification key fingerprints",
   },
-  "substitution": {
-    "sender": "1. Claim sender Alice",
-    "prepare": "2. Prepare Alice → Bob",
-    "signer": "3. Choose Mallory’s signing key",
-    "sign": "4. Sign with Mallory’s key",
-    "verify": "5/7. Verify; compare key fingerprints",
-    "substitute": "6. Substitute Mallory’s public key",
-    "evidence": "8. Compare original pinned fingerprint"
+  substitution: {
+    sender: "1. Claim sender Alice",
+    prepare: "2. Prepare Alice → Bob",
+    signer: "3. Choose Mallory’s signing key",
+    sign: "4. Sign with Mallory’s key",
+    verify: "5/7. Verify; compare key fingerprints",
+    substitute: "6. Substitute Mallory’s public key",
+    evidence: "8. Compare original pinned fingerprint",
   },
-  "replay": {
-    "prepare": "1. Prepare Alice → Bob",
-    "sign": "2. Sign unchanged package",
-    "deliver": "3. Deliver original package once",
-    "capture": "4. Capture exact signed package",
-    "replay": "5. Replay without re-signing",
-    "protection": "6. Enable protection; replay again",
-    "evidence": "7. Compare duplicate delivery decisions"
+  replay: {
+    prepare: "1. Prepare Alice → Bob",
+    sign: "2. Sign unchanged package",
+    deliver: "3. Deliver original package once",
+    capture: "4. Capture exact signed package",
+    replay: "5. Replay without re-signing",
+    protection: "6. Enable protection; replay again",
+    evidence: "7. Compare duplicate delivery decisions",
   },
-  "plaintext": {
-    "prepare": "1. Prepare Alice → Bob",
-    "sign": "2. Sign unchanged package",
-    "deliver": "3. Deliver signed package",
-    "inbox": "4. Read received message text",
-    "payload": "5. Inspect readable signed payload"
+  plaintext: {
+    prepare: "1. Prepare Alice → Bob",
+    sign: "2. Sign unchanged package",
+    deliver: "3. Deliver signed package",
+    inbox: "4. Read received message text",
+    payload: "5. Inspect readable signed payload",
   },
-  "untrusted": {
-    "prepare": "1. Prepare Alice → Bob",
-    "sign": "2. Sign unchanged package",
-    "verify": "3/5/7. Verify after each change",
-    "remove": "4. Remove Alice’s trusted key",
-    "restore": "6. Restore Alice’s original key",
-    "evidence": "8. Inspect trust and validity"
-  }
+  untrusted: {
+    prepare: "1. Prepare Alice → Bob",
+    sign: "2. Sign unchanged package",
+    verify: "3/5/7. Verify after each change",
+    remove: "4. Remove Alice’s trusted key",
+    restore: "6. Restore Alice’s original key",
+    evidence: "8. Inspect trust and validity",
+  },
 };
 export function AttackLab({ api }: { api: Api }) {
   const [session, setSession] = useState("");
@@ -322,9 +330,7 @@ export function AttackLab({ api }: { api: Api }) {
       )}
       {notice && <p role="status">{notice}</p>}
       {!session ? (
-        <p>
-          Click Create isolated lab first.
-        </p>
+        <p>Click Create isolated lab first.</p>
       ) : (
         <fieldset disabled={busy}>
           <div className="lab-columns">
@@ -349,28 +355,28 @@ export function AttackLab({ api }: { api: Api }) {
                 />
               </label>
               <div className="lab-guided-action">
-<Button
-                onClick={() =>
-                  void run(async () => {
-                    const value = (await api.lab(`/${session}/prepare`, {
-                      senderId: sender,
-                      receiverId: recipient,
-                      message: content,
-                    })) as Packet;
-                    if (!alive.current) return;
-                    setPacket(value);
-                    setOriginal(null);
-                    await refresh();
-                    setNotice(
-                      "New message ID created. Nothing signed or delivered.",
-                    );
-                  })
-                }
-              >
-                Prepare new message ID
-              </Button>
-{hint("prepare")}
-</div>
+                <Button
+                  onClick={() =>
+                    void run(async () => {
+                      const value = (await api.lab(`/${session}/prepare`, {
+                        senderId: sender,
+                        receiverId: recipient,
+                        message: content,
+                      })) as Packet;
+                      if (!alive.current) return;
+                      setPacket(value);
+                      setOriginal(null);
+                      await refresh();
+                      setNotice(
+                        "New message ID created. Nothing signed or delivered.",
+                      );
+                    })
+                  }
+                >
+                  Prepare new message ID
+                </Button>
+                {hint("prepare")}
+              </div>
               <h3>2 · Choose a key and sign</h3>
               {select(
                 "Signing key owner (independent of claimed sender)",
@@ -396,28 +402,28 @@ export function AttackLab({ api }: { api: Api }) {
                 </p>
               </details>
               <div className="lab-guided-action">
-<Button
-                disabled={!packet}
-                onClick={() =>
-                  void run(async () => {
-                    const value = (await api.lab(`/${session}/sign`, {
-                      packet,
-                      privateKey,
-                    })) as Packet;
-                    if (!alive.current) return;
-                    setPacket(value);
-                    setOriginal({ ...value });
-                    await refresh();
-                    setNotice(
-                      "Current package signed. Delivery is a separate action.",
-                    );
-                  })
-                }
-              >
-                Sign current package
-              </Button>
-{hint("sign")}
-</div>
+                <Button
+                  disabled={!packet}
+                  onClick={() =>
+                    void run(async () => {
+                      const value = (await api.lab(`/${session}/sign`, {
+                        packet,
+                        privateKey,
+                      })) as Packet;
+                      if (!alive.current) return;
+                      setPacket(value);
+                      setOriginal({ ...value });
+                      await refresh();
+                      setNotice(
+                        "Current package signed. Delivery is a separate action.",
+                      );
+                    })
+                  }
+                >
+                  Sign current package
+                </Button>
+                {hint("sign")}
+              </div>
               <h3>Recipient's trusted-key directory</h3>
               <p>
                 Mapping: {recipient} → {packet?.senderId || sender}
@@ -439,52 +445,43 @@ export function AttackLab({ api }: { api: Api }) {
                   Apply edited public key
                 </Button>
                 <div className="lab-guided-action">
-<Button
-                  onClick={() =>
-                    void run(() =>
-                      trust(
-                        identities.find((i) => i.name === "mallory")!.publicKey,
-                      ),
-                    )
-                  }
-                >
-                  Substitute Mallory key
-                </Button>
-{hint("substitute")}
-</div>
+                  <Button
+                    onClick={() =>
+                      void run(() =>
+                        trust(
+                          identities.find((i) => i.name === "mallory")!
+                            .publicKey,
+                        ),
+                      )
+                    }
+                  >
+                    Substitute Mallory key
+                  </Button>
+                  {hint("substitute")}
+                </div>
                 <div className="lab-guided-action">
-<Button onClick={() => void run(() => trust(""))}>
-                  Remove trust
-                </Button>
-{hint("remove")}
-</div>
+                  <Button onClick={() => void run(() => trust(""))}>
+                    Remove trust
+                  </Button>
+                  {hint("remove")}
+                </div>
                 <div className="lab-guided-action">
-<Button
-                  onClick={() =>
-                    void run(() =>
-                      trust(
-                        identities.find(
-                          (i) => i.name === (packet?.senderId || sender),
-                        )!.publicKey,
-                      ),
-                    )
-                  }
-                >
-                  Restore original key
-                </Button>
-{hint("restore")}
-</div>
+                  <Button
+                    onClick={() =>
+                      void run(() =>
+                        trust(
+                          identities.find(
+                            (i) => i.name === (packet?.senderId || sender),
+                          )!.publicKey,
+                        ),
+                      )
+                    }
+                  >
+                    Restore original key
+                  </Button>
+                  {hint("restore")}
+                </div>
               </div>
-              <details>
-                <summary>Lab public keys & pinned fingerprints</summary>
-                {identities.map((i) => (
-                  <div key={i.name}>
-                    <strong>{i.name}</strong>
-                    <pre>{i.publicKey}</pre>
-                    <pre>{i.fingerprint}</pre>
-                  </div>
-                ))}
-              </details>
             </article>
             <article>
               <h3>3 · Inspect / edit after signing</h3>
@@ -496,44 +493,44 @@ export function AttackLab({ api }: { api: Api }) {
                 <>
                   {(Object.keys(packet) as (keyof Packet)[]).map((key) => (
                     <div key={key}>
-                    <label>
-                      {key}
-                      <textarea
-                        rows={key === "signature" ? 3 : 2}
-                        value={packet[key]}
-                        onChange={(e) => mutate(key, e.target.value)}
-                      />
-                    </label>
-                    {original && hint(key)}
+                      <label>
+                        {key}
+                        <textarea
+                          rows={key === "signature" ? 3 : 2}
+                          value={packet[key]}
+                          onChange={(e) => mutate(key, e.target.value)}
+                        />
+                      </label>
+                      {original && hint(key)}
                     </div>
                   ))}
                   <div className="lab-actions">
                     <div className="lab-guided-action">
-<Button
-                      disabled={!packet.signature}
-                      onClick={() => {
-                        try {
-                          const bytes = Uint8Array.from(
-                            atob(packet.signature),
-                            (c) => c.charCodeAt(0),
-                          );
-                          if (!bytes.length) throw new Error("Sign first");
-                          bytes[0] ^= 1;
-                          mutate(
-                            "signature",
-                            btoa(String.fromCharCode(...bytes)),
-                          );
-                        } catch {
-                          setError(
-                            "Signature must be valid Base64 to flip a bit.",
-                          );
-                        }
-                      }}
-                    >
-                      Flip one signature bit
-                    </Button>
-{hint("flip")}
-</div>
+                      <Button
+                        disabled={!packet.signature}
+                        onClick={() => {
+                          try {
+                            const bytes = Uint8Array.from(
+                              atob(packet.signature),
+                              (c) => c.charCodeAt(0),
+                            );
+                            if (!bytes.length) throw new Error("Sign first");
+                            bytes[0] ^= 1;
+                            mutate(
+                              "signature",
+                              btoa(String.fromCharCode(...bytes)),
+                            );
+                          } catch {
+                            setError(
+                              "Signature must be valid Base64 to flip a bit.",
+                            );
+                          }
+                        }}
+                      >
+                        Flip one signature bit
+                      </Button>
+                      {hint("flip")}
+                    </div>
                     <Button
                       disabled={!original}
                       onClick={() => {
@@ -544,7 +541,7 @@ export function AttackLab({ api }: { api: Api }) {
                       Restore signed original
                     </Button>
                   </div>
-                  <details>
+                  <details open>
                     <summary>Original signed package</summary>
                     <pre>{JSON.stringify(original, null, 2)}</pre>
                   </details>
@@ -564,51 +561,51 @@ export function AttackLab({ api }: { api: Api }) {
                   {hint("protection")}
                   <div className="lab-actions">
                     <div className="lab-guided-action">
-<Button
-                      onClick={() =>
-                        void run(() =>
-                          check(
-                            packet,
-                            false,
-                            "Current editable package — verification only",
-                          ),
-                        )
-                      }
-                    >
-                      Verify current package
-                    </Button>
-{hint("verify")}
-</div>
+                      <Button
+                        onClick={() =>
+                          void run(() =>
+                            check(
+                              packet,
+                              false,
+                              "Current editable package — verification only",
+                            ),
+                          )
+                        }
+                      >
+                        Verify current package
+                      </Button>
+                      {hint("verify")}
+                    </div>
                     <div className="lab-guided-action">
-<Button
-                      onClick={() =>
-                        void run(() =>
-                          check(
-                            packet,
-                            true,
-                            "Current editable package — delivery",
-                          ),
-                        )
-                      }
-                    >
-                      Deliver current package
-                    </Button>
-{hint("deliver")}
-</div>
+                      <Button
+                        onClick={() =>
+                          void run(() =>
+                            check(
+                              packet,
+                              true,
+                              "Current editable package — delivery",
+                            ),
+                          )
+                        }
+                      >
+                        Deliver current package
+                      </Button>
+                      {hint("deliver")}
+                    </div>
                     <div className="lab-guided-action">
-<Button
-                      disabled={!packet.signature}
-                      onClick={() => {
-                        setCaptured({ ...packet });
-                        setNotice(
-                          "Captured exact package. Replay will not generate an ID or signature.",
-                        );
-                      }}
-                    >
-                      Capture signed package
-                    </Button>
-{hint("capture")}
-</div>
+                      <Button
+                        disabled={!packet.signature}
+                        onClick={() => {
+                          setCaptured({ ...packet });
+                          setNotice(
+                            "Captured exact package. Replay will not generate an ID or signature.",
+                          );
+                        }}
+                      >
+                        Capture signed package
+                      </Button>
+                      {hint("capture")}
+                    </div>
                   </div>
                 </>
               ) : (
@@ -619,21 +616,21 @@ export function AttackLab({ api }: { api: Api }) {
                   <h3>Captured package · immutable replay</h3>
                   <pre>{JSON.stringify(captured, null, 2)}</pre>
                   <div className="lab-guided-action">
-<Button
-                    onClick={() =>
-                      void run(() =>
-                        check(
-                          captured,
-                          true,
-                          "Captured package — exact replay delivery",
-                        ),
-                      )
-                    }
-                  >
-                    Deliver again without re-signing
-                  </Button>
-{hint("replay")}
-</div>
+                    <Button
+                      onClick={() =>
+                        void run(() =>
+                          check(
+                            captured,
+                            true,
+                            "Captured package — exact replay delivery",
+                          ),
+                        )
+                      }
+                    >
+                      Deliver again without re-signing
+                    </Button>
+                    {hint("replay")}
+                  </div>
                 </div>
               )}
             </article>
@@ -795,9 +792,60 @@ export function AttackLab({ api }: { api: Api }) {
             )}
           </article>
           <article>
+            <section className="lab-key-tables" aria-label="Lab key storage">
+              <h3>Lab keys</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Owner</TableHead>
+                    <TableHead>Public key</TableHead>
+                    <TableHead>Original fingerprint</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {identities.map((identity) => (
+                    <TableRow key={identity.name}>
+                      <TableCell>{identity.name}</TableCell>
+                      <TableCell>
+                        <code>{identity.publicKey}</code>
+                      </TableCell>
+                      <TableCell>
+                        <code>{identity.fingerprint}</code>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <h3>Recipient trust connections</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Recipient</TableHead>
+                    <TableHead>Claimed sender</TableHead>
+                    <TableHead>Trusted public key</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Object.entries(state.trustedKeys).map(([mapping, key]) => {
+                    const [owner, claimedSender] = mapping.split(":");
+                    return (
+                      <TableRow key={mapping}>
+                        <TableCell>{owner}</TableCell>
+                        <TableCell>{claimedSender}</TableCell>
+                        <TableCell>
+                          <code>{key}</code>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </section>
+          </article>
+          <article>
             <h3>Activity & evidence</h3>
             <Button onClick={exportLog}>Export experiment log</Button>
-            <details>
+            <details open>
               <summary>{state.events.length} backend events</summary>
               <pre>{JSON.stringify(state.events, null, 2)}</pre>
             </details>

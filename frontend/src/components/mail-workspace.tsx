@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Api, SignedMessage, User } from "@/lib/api.js";
 import { errorMessage, useTask } from "@/lib/use-task";
 import { Empty, MessageDetails, Timestamp } from "./message-details";
-import { Simulation } from "./simulation";
+import { StorageView } from "./storage-view";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,19 +15,17 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
-import CommandPalette from "@/components/kokonutui/action-search-bar";
-import { StatusIsland } from "@/components/kokonutui/status-island";
 import { AttackLab } from "./attack-lab";
 const subscribeWidth = (change: () => void) => {
   window.addEventListener("resize", change);
   return () => window.removeEventListener("resize", change);
 };
 const isNarrow = () => window.innerWidth < 760;
-type View = "inbox" | "compose" | "simulation" | "attacks";
+type View = "inbox" | "compose" | "storage" | "attacks";
 const titles: Record<View, string> = {
   inbox: "Inbox",
-  compose: "Compose / search",
-  simulation: "Alice ⇄ Bob simulation",
+  compose: "Compose",
+  storage: "Storage",
   attacks: "Tests",
 };
 export function MailWorkspace({
@@ -57,6 +55,7 @@ export function MailWorkspace({
       "checking",
     );
   const [copyNotice, setCopyNotice] = useState("");
+  const [headerQuery, setHeaderQuery] = useState("");
   const { busy, run } = useTask();
   const load = useCallback(
     async (current: () => boolean) => {
@@ -159,43 +158,54 @@ export function MailWorkspace({
             <span>@{user.name}</span>
           </div>
         </div>
-        <CommandPalette
-          className="workspace-command"
-          label="Find users by username or public key"
-          placeholder="Search username or public key…"
-          shortcut
-          items={users.map((entry) => ({
-            id: entry.name,
-            label: entry.name,
-            group: "Registered identities",
-            keywords: [entry.publicKey],
-          }))}
-          onSelect={(item) => {
-            const entry = users.find((candidate) => candidate.name === item.id);
-            if (entry) choose(entry);
-          }}
-        />
-        <StatusIsland
-          className="backend-island"
-          tasks={[
-            {
-              id: "backend",
-              label:
-                busy || connection === "checking"
-                  ? "Contacting backend"
-                  : connection === "connected"
-                    ? "Backend connected"
-                    : "Backend request failed",
-              status:
-                busy || connection === "checking"
-                  ? "running"
-                  : connection === "connected"
-                    ? "done"
-                    : "error",
-              action: { label: "Refresh", onClick: refresh },
-            },
-          ]}
-        />
+        <div className="workspace-search">
+          <Input
+            aria-label="Find users by username or public key"
+            placeholder="Find a user or public key…"
+            value={headerQuery}
+            onChange={(event) => setHeaderQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setHeaderQuery("");
+              if (
+                event.key === "Enter" &&
+                headerQuery.trim() &&
+                matches(headerQuery)[0]
+              ) {
+                choose(matches(headerQuery)[0]);
+                setHeaderQuery("");
+              }
+            }}
+          />
+          {headerQuery.trim() && (
+            <div
+              className="search-results"
+              role="listbox"
+              aria-label="Matching users"
+            >
+              {matches(headerQuery).map((entry) => (
+                <button
+                  key={entry.name}
+                  role="option"
+                  aria-selected={false}
+                  onClick={() => {
+                    choose(entry);
+                    setHeaderQuery("");
+                  }}
+                >
+                  {entry.name}
+                </button>
+              ))}
+              {!matches(headerQuery).length && <p>No matching users.</p>}
+            </div>
+          )}
+        </div>
+        <Badge variant="outline" className="backend-status">
+          {connection === "checking"
+            ? "Connecting…"
+            : connection === "connected"
+              ? "Backend connected"
+              : "Backend request failed"}
+        </Badge>
         <div className="header-actions">
           <Button
             variant="ghost"
@@ -212,10 +222,6 @@ export function MailWorkspace({
       </header>
       <div className="workspace">
         <aside className="mail-sidebar">
-          <div className="sidebar-label">MAIL WORKSPACE</div>
-          <Button className="mb-6 w-full" onClick={() => setView("compose")}>
-            ＋ Compose message
-          </Button>
           <TabsList
             className="dashboard-nav workspace-tab-list"
             aria-label="Mail navigation"
@@ -234,15 +240,15 @@ export function MailWorkspace({
               </TabsTrigger>
             ))}
           </TabsList>
-          <details className="lab-user-details">
-            <summary>Your identity & public key</summary>
+          <section
+            className="lab-user-details"
+            aria-label="Your identity and public key"
+          >
+            <h3>Your identity</h3>
             <strong>{user.name}</strong>
             <p>Trusted: {String(user.trusted)}</p>
             <pre>{user.publicKey}</pre>
-            <Button variant="outline" size="sm" onClick={onVault}>
-              Open private key vault
-            </Button>
-          </details>
+          </section>
           <div className="sidebar-bottom">
             Ed25519 · signed mail
             <p>
@@ -255,15 +261,14 @@ export function MailWorkspace({
         <main className="mail-main">
           <div className="workspace-toolbar">
             <div>
-              <span className="eyebrow">
-                SIGNEDCHAT / {titles[view].toUpperCase()}
-              </span>
               <h1>{titles[view]}</h1>
             </div>
             <div className="toolbar-actions">
-              <Button variant="outline" disabled={busy} onClick={refresh}>
-                ↻ Refresh
-              </Button>
+              {view !== "storage" && view !== "attacks" && (
+                <Button variant="outline" disabled={busy} onClick={refresh}>
+                  ↻ Refresh
+                </Button>
+              )}
             </div>
           </div>
           {notice && (
@@ -536,13 +541,9 @@ export function MailWorkspace({
               </section>
             </TabsContent>
           )}
-          {view === "simulation" && (
-            <TabsContent value="simulation">
-              <Simulation
-                api={api}
-                users={users}
-                onDelivered={refresh}
-              />
+          {view === "storage" && (
+            <TabsContent value="storage">
+              <StorageView api={api} />
             </TabsContent>
           )}
           {view === "attacks" && (

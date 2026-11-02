@@ -22,8 +22,10 @@ public class SignatureService {
         String senderId,
         String receiverId
     ) throws GeneralSecurityException {
-        byte[] payload = new com.mohnish.signedchat.encoding.PayloadEncoder().encode(senderId, receiverId, message);
-        return new SignedMessage(message, sign(payload, privateKey), senderId, receiverId);
+        com.mohnish.signedchat.encoding.PayloadEncoder encoder = new com.mohnish.signedchat.encoding.PayloadEncoder();
+        String nonce = encoder.generateNonce();
+        byte[] payload = encoder.encode(senderId, receiverId, message, nonce);
+        return new SignedMessage(message, sign(payload, privateKey), senderId, receiverId, nonce);
     }
 
     public byte[] sign(byte[] payload, PrivateKey privateKey)

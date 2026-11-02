@@ -47,7 +47,7 @@ function App() {
       window.clearInterval(timer);
     };
   }, [vaultName, runTask]);
-  const open = (pair: UserKeys) => {
+  const open = (pair: UserKeys, showVault = false) => {
     if (!pair.name || !pair.publicKey || !pair.privateKey)
       throw new Error("The backend did not return a complete demo key pair.");
     setUser({
@@ -55,9 +55,9 @@ function App() {
       publicKey: pair.publicKey,
       trusted: pair.trusted,
     });
-    setVault(pair);
+    setVault(showVault ? pair : null);
     setNotice("");
-    setScreen("vault");
+    setScreen(showVault ? "vault" : "workspace");
   };
   const logout = () => {
     task.cancel();
@@ -141,7 +141,7 @@ function App() {
                       void task.run(
                         async (current) => {
                           const pair = await api.getUserKeys(user.name);
-                          if (current()) open(pair);
+                          if (current()) open(pair, true);
                         },
                         (error) => setNotice(errorMessage(error)),
                       );
@@ -174,7 +174,9 @@ function App() {
         />
       )}
       {screen === "vault" && notice && (
-        <p className="notice error" role="status">{notice}</p>
+        <p className="notice error" role="status">
+          {notice}
+        </p>
       )}
       {screen === "vault" && vault && (
         <KeyVault
@@ -211,7 +213,7 @@ function App() {
                 void task.run(
                   async (current) => {
                     const pair = await api.getUserKeys(user.name);
-                    if (current()) open(pair);
+                    if (current()) open(pair, true);
                   },
                   (error) => setNotice(errorMessage(error)),
                 );

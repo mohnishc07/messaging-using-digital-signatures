@@ -46,6 +46,7 @@ export function payload(
   sender: string,
   recipient: string,
   content: string,
+  nonce?: string,
 ): string;
 export function hex(bytes: Uint8Array): string;
 export function fromHex(value: string): Uint8Array;

@@ -14,6 +14,7 @@ import java.util.Map;
 
 public class MessagingService {
 
+    private final Map<String, java.util.Set<String>> acceptedNonces = new HashMap<>();
     private final SignatureService signatureService;
     private final PayloadEncoder payloadEncoder;
     private final TrustedKeyStore trustedKeyStore;
@@ -45,12 +46,13 @@ public class MessagingService {
             );
         }
         String senderId = sender.getName();
-        byte[] payload = payloadEncoder.encode(senderId, recipientId, content);
+        String nonce = payloadEncoder.generateNonce();
+        byte[] payload = payloadEncoder.encode(senderId, recipientId, content, nonce);
         byte[] signature = signatureService.sign(
             payload,
             sender.getPrivateKey()
         );
-        return new SignedMessage(content, signature, senderId, recipientId);
+        return new SignedMessage(content, signature, senderId, recipientId, nonce);
     }
 
     public synchronized boolean receive(SignedMessage message, String receivingUserId)
@@ -60,6 +62,8 @@ public class MessagingService {
             invalidId(receivingUserId) ||
             invalidId(message.getSenderId()) ||
             invalidId(message.getReceiverId()) ||
+            message.getNonce() == null ||
+            !message.getNonce().matches("[A-Za-z0-9+/]{43}=") ||
             message.getMessage() == null ||
             message.getSignature() == null ||
             message.getSignature().length == 0 ||
@@ -82,7 +86,8 @@ public class MessagingService {
         byte[] payload = payloadEncoder.encode(
             message.getSenderId(),
             message.getReceiverId(),
-            message.getMessage()
+            message.getMessage(),
+            message.getNonce()
         );
         try {
             if (
@@ -98,6 +103,10 @@ public class MessagingService {
             // Providers may throw instead of returning false for malformed signatures.
             return false;
         }
+
+        // receive is synchronized: verification, nonce consumption and storage are atomic.
+        java.util.Set<String> seen = acceptedNonces.computeIfAbsent(receivingUserId, id -> new java.util.HashSet<>());
+        if (!seen.add(message.getNonce())) return false;
 
         inboxes
             .computeIfAbsent(receivingUserId, id -> new ArrayList<>())

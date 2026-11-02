@@ -56,7 +56,7 @@ Existing public application: https://signedchat-backend.onrender.com
 
 Frontend and API share that origin. The Java app uses the hosting provider's PORT. Public Git repository URL services on Render require manual deploys after pushing; inspect existing deployments before triggering one.
 
-The prototype stores users, keys, and inboxes only in memory. Restarting or redeploying resets them. Render's free service can sleep, so first requests may be slow. Messages are plaintext, replay protection is absent, and public-key trust is a demo server flag. Signing math uses disposable example keys; real messaging uses established Java cryptography.
+The prototype stores users, keys, and inboxes only in memory. Restarting or redeploying resets them. Render's free service can sleep, so first requests may be slow. Messages are plaintext, normal mail rejects reused signed nonces, and public-key trust is a demo server flag. Signing math uses disposable example keys; real messaging uses established Java cryptography.
 
 ## Manual security experiments
 
@@ -102,3 +102,19 @@ python3 scripts/verify-lab.py http://localhost:8080
 This creates and deletes only its own temporary lab, exercises all seven experiments, and exits
 with an error if an observed outcome differs. It requires Python 3, with no third-party packages.
 GitHub Actions runs the Java 21 backend suite and frontend build, tests, and lint on pushes.
+
+## Normal-mail replay protection (v2)
+
+Each signing operation creates a fresh 32-byte SecureRandom nonce, encoded as Base64.
+The exact signed UTF-8 payload is `signedchat-v2:` followed by Base64 UTF-8 fields
+in this order: nonce, sender ID, recipient ID, content, separated by colons.
+The nonce is returned with the message and is itself authenticated by Ed25519.
+The recipient verifies the signature before atomically recording the nonce and
+storing the message. Reusing an accepted nonce is rejected; changing a captured
+nonce invalidates its signature. Newly signing identical text creates a new nonce
+and is accepted. Packages without a nonce are rejected, with no legacy fallback.
+Nonce history shares the prototype's in-memory lifetime; durable/multi-instance
+deployments require a shared persistent unique constraint. Nonces stop duplicate
+delivery, not delayed first delivery or message-content disclosure.
+The isolated lab still uses its signed unique message ID as its replay token and
+retains its protection toggle to demonstrate the vulnerable case.

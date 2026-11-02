@@ -1,41 +1,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { SignedMessage } from "@/lib/api.js";
-import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@/components/ui/collapsible";
-import SmoothDrawer from "@/components/kokonutui/smooth-drawer";
 import { payload } from "@/lib/math.js";
 
-export function MessageDetails({
-  message,
-}: {
-  message: SignedMessage;
-}) {
+export function MessageDetails({ message }: { message: SignedMessage }) {
   const [copied, setCopied] = useState("");
-  const evidence = (
-    <div className="signature-evidence">
-      <Badge variant="secondary">Ed25519 · accepted on delivery</Badge>
-      <p>
-        The inbox contains packages previously accepted by the backend. Opening
-        these details does not perform a fresh signature verification.
-      </p>
-      <dl>
-        <dt>Signature · Base64</dt>
-        <dd>{message.signature}</dd>
-        <dt>Exact signed UTF-8 payload</dt>
-        <dd>
-          {payload(message.senderId, message.receiverId, message.message)}
-        </dd>
-      </dl>
-      <pre className="math-value">{JSON.stringify(message, null, 2)}</pre>
-    </div>
-  );
   return (
-    <Collapsible className="message-details">
+    <Collapsible className="message-details" defaultOpen>
       <CollapsibleTrigger asChild>
         <Button variant="ghost" size="sm">
           Inspect Ed25519 signature & signed package
@@ -43,6 +19,8 @@ export function MessageDetails({
       </CollapsibleTrigger>
       <CollapsibleContent className="detail-content">
         <dl>
+          <dt>Replay nonce</dt>
+          <dd>{message.nonce || "Legacy package — no nonce"}</dd>
           <dt>Sender</dt>
           <dd>{message.senderId}</dd>
           <dt>Recipient</dt>
@@ -50,14 +28,22 @@ export function MessageDetails({
           <dt>Ed25519 signature · Base64</dt>
           <dd>{message.signature}</dd>
         </dl>
+        <dl>
+          <dt>Exact signed payload</dt>
+          <dd>
+            {payload(
+              message.senderId,
+              message.receiverId,
+              message.message,
+              message.nonce,
+            )}
+          </dd>
+        </dl>
+        <p>
+          Accepted on delivery. Opening these details does not verify the
+          signature again.
+        </p>
         <div className="reader-actions">
-          <SmoothDrawer
-            title="Ed25519 signature evidence"
-            description={`${message.senderId} → ${message.receiverId} · stored delivery package`}
-            triggerLabel="Open verification drawer"
-          >
-            {evidence}
-          </SmoothDrawer>
           <Button
             type="button"
             variant="ghost"
