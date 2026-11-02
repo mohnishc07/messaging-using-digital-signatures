@@ -96,7 +96,7 @@ function App() {
             name: name.trim(),
             trusted: true,
           });
-          if (current()) open(pair);
+          if (current()) open(pair, true);
         } catch (error) {
           if (!current()) return;
           if (error instanceof ApiError && error.status === 409) {

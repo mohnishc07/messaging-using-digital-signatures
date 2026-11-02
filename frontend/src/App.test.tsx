@@ -115,12 +115,12 @@ describe("React identity and mail flow", () => {
         name: "Create identity",
       }),
     );
-    await screen.findByRole("heading", { name: "Inbox" });
+    await screen.findByRole("heading", { name: "Your Cryptographic Identity" });
     expect(fake.createUser).toHaveBeenCalledWith({
       name: "Carol",
       trusted: true,
     });
-    expect(screen.getByText("@Carol")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "@Carol" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Your private key")).not.toBeInTheDocument();
   });
   it("keeps connection errors on Home", async () => {
@@ -154,7 +154,7 @@ describe("React identity and mail flow", () => {
     await waitFor(() => expect(slider).toBeEnabled());
     expect(screen.queryByText("Identity created")).not.toBeInTheDocument();
     fireEvent.click(slider);
-    await screen.findByRole("heading", { name: "Inbox" });
+    await screen.findByRole("heading", { name: "Your Cryptographic Identity" });
     expect(fake.createUser).toHaveBeenCalledTimes(2);
   });
   it("returns a concurrently registered name to login instead of creating twice", async () => {

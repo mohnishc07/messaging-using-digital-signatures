@@ -2045,3 +2045,28 @@ h1[tabindex="-1"]:focus {
     font-size: 11px;
   }
 }
+
+/* Small interaction feedback, without decorative or continuous animation. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="button"], .dashboard-nav button, .manual-lab nav button,
+  .recipient-row, .mail-row, .search-results button {
+    transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, opacity 140ms ease, transform 100ms ease;
+  }
+  [data-slot="button"]:not(:disabled):not([aria-disabled="true"]):active,
+  .manual-lab nav button:not(:disabled):active { transform: translateY(1px); }
+  .dashboard-nav button:not(:disabled):hover, .recipient-row:not(:disabled):hover,
+  .search-results button:hover { transform: translateX(2px); }
+}
+.dashboard-nav button:focus-visible, .manual-lab nav button:focus-visible,
+.recipient-row:focus-visible, .mail-row:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="button"], .dashboard-nav button, .manual-lab nav button,
+  .recipient-row, .mail-row, .search-results button {
+    transition: none !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}
