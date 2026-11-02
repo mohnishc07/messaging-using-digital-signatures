@@ -12,10 +12,8 @@ import { payload } from "@/lib/math.js";
 
 export function MessageDetails({
   message,
-  onTrace,
 }: {
   message: SignedMessage;
-  onTrace: (message: SignedMessage) => void;
 }) {
   const [copied, setCopied] = useState("");
   const evidence = (
@@ -34,10 +32,6 @@ export function MessageDetails({
         </dd>
       </dl>
       <pre className="math-value">{JSON.stringify(message, null, 2)}</pre>
-      <p>
-        The math lab traces this payload with a disposable key; it does not
-        reproduce the sender's private key.
-      </p>
     </div>
   );
   return (
@@ -80,14 +74,6 @@ export function MessageDetails({
             }}
           >
             {copied || "Copy signed package"}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onTrace(message)}
-          >
-            Trace payload in math lab →
           </Button>
         </div>
       </CollapsibleContent>

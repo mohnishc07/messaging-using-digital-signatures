@@ -9,12 +9,10 @@ import { Empty, MessageDetails } from "./message-details";
 export function Simulation({
   api,
   users,
-  onTrace,
   onDelivered,
 }: {
   api: Api;
   users: User[];
-  onTrace: (message: SignedMessage) => void;
   onDelivered: () => void;
 }) {
   const [pair, setPair] = useState<[string, string]>([
@@ -125,7 +123,7 @@ export function Simulation({
                     <div className="message-sender">{message.senderId}</div>
                     <p>{message.message}</p>
                     <div className="verified">✓ Accepted by backend</div>
-                    <MessageDetails message={message} onTrace={onTrace} />
+                    <MessageDetails message={message} />
                   </article>
                 ))}
               {!messages.length && (

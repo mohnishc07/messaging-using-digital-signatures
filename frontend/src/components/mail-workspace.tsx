@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Api, SignedMessage, User } from "@/lib/api.js";
 import { errorMessage, useTask } from "@/lib/use-task";
 import { Empty, MessageDetails, Timestamp } from "./message-details";
-import { MathLab } from "./math-lab";
 import { Simulation } from "./simulation";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -24,12 +23,11 @@ const subscribeWidth = (change: () => void) => {
   return () => window.removeEventListener("resize", change);
 };
 const isNarrow = () => window.innerWidth < 760;
-type View = "inbox" | "compose" | "simulation" | "math" | "attacks";
+type View = "inbox" | "compose" | "simulation" | "attacks";
 const titles: Record<View, string> = {
   inbox: "Inbox",
   compose: "Compose / search",
   simulation: "Alice ⇄ Bob simulation",
-  math: "Signing math",
   attacks: "Tests",
 };
 export function MailWorkspace({
@@ -58,12 +56,7 @@ export function MailWorkspace({
     [connection, setConnection] = useState<"checking" | "connected" | "error">(
       "checking",
     );
-  const [mathInput, setMathInput] = useState<{
-      sender: string;
-      recipient: string;
-      content: string;
-    }>(),
-    [copyNotice, setCopyNotice] = useState("");
+  const [copyNotice, setCopyNotice] = useState("");
   const { busy, run } = useTask();
   const load = useCallback(
     async (current: () => boolean) => {
@@ -128,14 +121,6 @@ export function MailWorkspace({
     setView("compose");
     setNotice("");
     setCopyNotice("");
-  };
-  const trace = (entry: SignedMessage) => {
-    setMathInput({
-      sender: entry.senderId,
-      recipient: entry.receiverId,
-      content: entry.message,
-    });
-    setView("math");
   };
   const directory = (filter: string) => (
     <>
@@ -385,7 +370,7 @@ export function MailWorkspace({
                             <div className="message-body">
                               {message.message}
                             </div>
-                            <MessageDetails message={message} onTrace={trace} />
+                            <MessageDetails message={message} />
                             <Button
                               className="mt-6"
                               variant="outline"
@@ -556,14 +541,8 @@ export function MailWorkspace({
               <Simulation
                 api={api}
                 users={users}
-                onTrace={trace}
                 onDelivered={refresh}
               />
-            </TabsContent>
-          )}
-          {view === "math" && (
-            <TabsContent value="math">
-              <MathLab key={JSON.stringify(mathInput)} initial={mathInput} />
             </TabsContent>
           )}
           {view === "attacks" && (
