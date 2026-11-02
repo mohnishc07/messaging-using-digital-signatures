@@ -95,6 +95,22 @@ export function MailWorkspace({
       active = false;
     };
   }, [refresh]);
+  useEffect(() => {
+    if (view !== "inbox") return;
+    let active = true;
+    const timer = window.setInterval(() => {
+      void run(
+        (current) => load(() => active && current()),
+        () => {
+          if (active) setConnection("error");
+        },
+      );
+    }, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [view, load, run]);
   const matches = (filter: string) => {
     const name = filter.trim().toLocaleLowerCase(),
       key = name.replace(/\s/g, "");
