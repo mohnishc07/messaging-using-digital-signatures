@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createApi, ApiError } from "@/lib/api.js";
 import type { User, UserKeys } from "@/lib/api.js";
@@ -19,6 +19,34 @@ function App() {
   const [name, setName] = useState(""),
     [notice, setNotice] = useState("");
   const task = useTask();
+  const { run: runTask } = task;
+  const vaultName = screen === "vault" ? user?.name : undefined;
+  useEffect(() => {
+    if (!vaultName) return;
+    let active = true;
+    const timer = window.setInterval(() => {
+      void runTask(
+        async (current) => {
+          const pair = await api.getUserKeys(vaultName);
+          if (!active || !current()) return;
+          setVault(pair);
+          setUser({
+            name: pair.name,
+            publicKey: pair.publicKey,
+            trusted: pair.trusted,
+          });
+          setNotice("");
+        },
+        (error) => {
+          if (active) setNotice(errorMessage(error));
+        },
+      );
+    }, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [vaultName, runTask]);
   const open = (pair: UserKeys) => {
     if (!pair.name || !pair.publicKey || !pair.privateKey)
       throw new Error("The backend did not return a complete demo key pair.");
@@ -144,6 +172,9 @@ function App() {
             setNotice("");
           }}
         />
+      )}
+      {screen === "vault" && notice && (
+        <p className="notice error" role="status">{notice}</p>
       )}
       {screen === "vault" && vault && (
         <KeyVault
